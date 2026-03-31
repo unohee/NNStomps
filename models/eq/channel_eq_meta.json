@@ -1,0 +1,40 @@
+{
+  "plugin_name": "api_550",
+  "cond_dim": 4,
+  "fir_len": 256,
+  "val_mag_error": 0.2653636112809181,
+  "controls": [
+    {
+      "name": "550_lf_gain",
+      "type": "continuous",
+      "min": -12,
+      "max": 12,
+      "default": 0.0,
+      "step": 0.5
+    },
+    {
+      "name": "550_lmf_gain",
+      "type": "continuous",
+      "min": -12,
+      "max": 12,
+      "default": 0.0,
+      "step": 0.5
+    },
+    {
+      "name": "550_hmf_gain",
+      "type": "continuous",
+      "min": -12,
+      "max": 12,
+      "default": 0.0,
+      "step": 0.5
+    },
+    {
+      "name": "550_hf_gain",
+      "type": "continuous",
+      "min": -12,
+      "max": 12,
+      "default": 0.0,
+      "step": 0.5
+    }
+  ]
+}

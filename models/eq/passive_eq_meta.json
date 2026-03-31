@@ -1,0 +1,80 @@
+{
+  "plugin_name": "massive_passive",
+  "cond_dim": 16,
+  "fir_len": 1024,
+  "val_mag_error": 0.3103175244548104,
+  "controls": [
+    {
+      "name": "ch1loenable",
+      "type": "categorical",
+      "options": [
+        "OUT",
+        "BOOST",
+        "CUT"
+      ],
+      "default": "OUT"
+    },
+    {
+      "name": "ch1logain",
+      "type": "continuous",
+      "min": 0,
+      "max": 20,
+      "default": 10.0,
+      "step": 0.5
+    },
+    {
+      "name": "ch1lomidenable",
+      "type": "categorical",
+      "options": [
+        "OUT",
+        "BOOST",
+        "CUT"
+      ],
+      "default": "OUT"
+    },
+    {
+      "name": "ch1lomidgain",
+      "type": "continuous",
+      "min": 0,
+      "max": 20,
+      "default": 10.0,
+      "step": 0.5
+    },
+    {
+      "name": "ch1himidenable",
+      "type": "categorical",
+      "options": [
+        "OUT",
+        "BOOST",
+        "CUT"
+      ],
+      "default": "OUT"
+    },
+    {
+      "name": "ch1himidgain",
+      "type": "continuous",
+      "min": 0,
+      "max": 20,
+      "default": 10.0,
+      "step": 0.5
+    },
+    {
+      "name": "ch1hienable",
+      "type": "categorical",
+      "options": [
+        "OUT",
+        "BOOST",
+        "CUT"
+      ],
+      "default": "OUT"
+    },
+    {
+      "name": "ch1higain",
+      "type": "continuous",
+      "min": 0,
+      "max": 20,
+      "default": 10.0,
+      "step": 0.5
+    }
+  ]
+}

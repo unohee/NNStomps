@@ -3,163 +3,66 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NNStomps — Neural Drive</title>
+<title>NNStomps — Neural Audio</title>
 <style>
-  :root {
-    --bg: #1a1a2e;
-    --surface: #16213e;
-    --accent: #e94560;
-    --accent2: #f59e0b;
-    --text: #eee;
-    --text-dim: #888;
-    --border: #333;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 2rem 1rem;
-  }
-  h1 { font-size: 1.6rem; margin-bottom: 0.3rem; }
-  .subtitle { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 2rem; }
-  .container {
-    width: 100%;
-    max-width: 700px;
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-  }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.2rem;
-  }
-  .card h2 { font-size: 0.9rem; color: var(--accent2); margin-bottom: 0.8rem; }
-  label { font-size: 0.8rem; color: var(--text-dim); display: block; margin-bottom: 0.3rem; }
-  select, input[type="file"] {
-    width: 100%;
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.5rem;
-    font-family: inherit;
-    font-size: 0.85rem;
-  }
-  .audio-row {
-    display: flex;
-    gap: 0.6rem;
-    align-items: center;
-    margin-bottom: 0.6rem;
-  }
-  .audio-row select { flex: 1; }
-  .audio-row label.file-btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.45rem 0.8rem;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    cursor: pointer;
-    white-space: nowrap;
-    margin-bottom: 0;
-  }
-  .audio-row label.file-btn:hover { border-color: var(--accent2); color: var(--text); }
-  .audio-row input[type="file"] { display: none; }
-  .slider-row {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    margin-bottom: 0.6rem;
-  }
-  .slider-row label { width: 90px; flex-shrink: 0; margin-bottom: 0; }
-  .slider-row input[type="range"] { flex: 1; accent-color: var(--accent); }
-  .slider-row .val { width: 45px; text-align: right; font-size: 0.85rem; color: var(--accent2); }
-  .btn-row { display: flex; gap: 0.6rem; margin-top: 0.5rem; }
-  button {
-    flex: 1;
-    padding: 0.7rem;
-    border: none;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 0.9rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  button:hover { filter: brightness(1.1); }
-  button:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-play { background: var(--accent); color: #fff; }
-  .btn-play.playing { background: #c0392b; }
-  .btn-stop { background: var(--border); color: var(--text); }
-  .btn-loop { background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
-  .btn-loop.active { border-color: var(--accent2); color: var(--accent2); }
-  .btn-bypass { background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
-  .btn-bypass.active { border-color: var(--accent2); color: var(--accent2); }
-  .status {
-    text-align: center;
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    min-height: 1.2rem;
-  }
-  .meter {
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin-top: 0.5rem;
-    overflow: hidden;
-  }
-  .meter-fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, var(--accent2), var(--accent));
-    transition: width 0.05s;
-  }
-  .model-info {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    margin-top: 0.4rem;
-  }
-  footer {
-    margin-top: 2rem;
-    font-size: 0.75rem;
-    color: var(--text-dim);
-  }
-  footer a { color: var(--accent2); text-decoration: none; }
+  :root { --bg:#1a1a2e; --surface:#16213e; --accent:#e94560; --accent2:#f59e0b; --text:#eee; --text-dim:#888; --border:#333; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'SF Mono','Fira Code',monospace;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem 1rem}
+  h1{font-size:1.6rem;margin-bottom:.3rem}
+  .subtitle{color:var(--text-dim);font-size:.85rem;margin-bottom:1.5rem}
+  .container{width:100%;max-width:720px;display:flex;flex-direction:column;gap:1.2rem}
+  .tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:.2rem}
+  .tab{padding:.6rem 1.2rem;cursor:pointer;color:var(--text-dim);font-weight:bold;font-size:.9rem;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--accent2);border-bottom-color:var(--accent2)}
+  .tab-content{display:none}
+  .tab-content.active{display:flex;flex-direction:column;gap:1.2rem}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.2rem}
+  .card h2{font-size:.9rem;color:var(--accent2);margin-bottom:.8rem}
+  label{font-size:.8rem;color:var(--text-dim);display:block;margin-bottom:.3rem}
+  select,input[type="file"]{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:.5rem;font-family:inherit;font-size:.85rem}
+  .audio-row{display:flex;gap:.6rem;align-items:center;margin-bottom:.6rem}
+  .audio-row select{flex:1}
+  .audio-row label.file-btn{display:inline-flex;align-items:center;padding:.45rem .8rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:.8rem;color:var(--text-dim);cursor:pointer;white-space:nowrap;margin-bottom:0}
+  .audio-row label.file-btn:hover{border-color:var(--accent2);color:var(--text)}
+  .audio-row input[type="file"]{display:none}
+  .slider-row{display:flex;align-items:center;gap:.8rem;margin-bottom:.6rem}
+  .slider-row label{width:100px;flex-shrink:0;margin-bottom:0}
+  .slider-row input[type="range"]{flex:1;accent-color:var(--accent)}
+  .slider-row .val{width:50px;text-align:right;font-size:.85rem;color:var(--accent2)}
+  .btn-row{display:flex;gap:.6rem;margin-top:.5rem}
+  button{flex:1;padding:.7rem;border:none;border-radius:8px;font-family:inherit;font-size:.9rem;font-weight:bold;cursor:pointer;transition:all .15s}
+  button:hover{filter:brightness(1.1)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .btn-play{background:var(--accent);color:#fff}
+  .btn-play.playing{background:#c0392b}
+  .btn-stop{background:var(--border);color:var(--text)}
+  .btn-loop{background:transparent;border:1px solid var(--border);color:var(--text-dim)}
+  .btn-loop.active,.btn-bypass.active{border-color:var(--accent2);color:var(--accent2)}
+  .btn-bypass{background:transparent;border:1px solid var(--border);color:var(--text-dim)}
+  .status{text-align:center;font-size:.8rem;color:var(--text-dim);min-height:1.2rem}
+  .meter{height:4px;background:var(--border);border-radius:2px;margin-top:.5rem;overflow:hidden}
+  .meter-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .05s}
+  .model-info{display:flex;justify-content:space-between;font-size:.75rem;color:var(--text-dim);margin-top:.4rem}
+  canvas{width:100%;height:150px;border-radius:8px;background:var(--bg);border:1px solid var(--border)}
+  footer{margin-top:2rem;font-size:.75rem;color:var(--text-dim)}
+  footer a{color:var(--accent2);text-decoration:none}
+  .eq-controls{max-height:400px;overflow-y:auto}
 </style>
 </head>
 <body>
 
-<h1>NNStomps — Neural Drive</h1>
-<p class="subtitle">Real-time GRU saturation/distortion in the browser</p>
+<h1>NNStomps — Neural Audio</h1>
+<p class="subtitle">Real-time neural saturation & EQ in the browser</p>
 
 <div class="container">
-  <div class="card">
-    <h2>Model</h2>
-    <select id="modelSelect">
-      <option value="blackstar" data-cond="2" data-p1="Drive A" data-p2="Drive B" data-desc="Dual-drive tube saturation">Blackstar — Tube (2-knob)</option>
-      <option value="dual_crush" data-cond="2" data-p1="Drive A" data-p2="Drive B" data-desc="FET + Zener dual section">Dual Crush — FET/Zener (2-knob)</option>
-      <option value="fet_clip" data-cond="1" data-p1="Drive" data-p2="" data-desc="FET clipping distortion">FET Clip — FET (1-knob)</option>
-      <option value="harmonic_cascade" data-cond="1" data-p1="Gain" data-p2="" data-desc="Tube cascade, H2 dominant">Harmonic Cascade — Tube (1-knob)</option>
-      <option value="warm_tape" data-cond="1" data-p1="Drive" data-p2="" data-desc="Warm tape saturation">Warm Tape — Tape (1-knob)</option>
-      <option value="tape_lo" data-cond="1" data-p1="Input" data-p2="" data-desc="Lo-fi cassette">Tape Lo — Cassette (1-knob)</option>
-    </select>
-    <div class="model-info">
-      <span id="modelDesc">Dual-drive tube saturation</span>
-      <span id="modelSize"></span>
-    </div>
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" data-tab="drive">Neural Drive</div>
+    <div class="tab" data-tab="eq">Neural EQ</div>
   </div>
 
+  <!-- Shared Audio -->
   <div class="card">
     <h2>Audio</h2>
     <div class="audio-row">
@@ -167,324 +70,413 @@
         <option value="audio/amen_break.mp3">Amen Break (175 BPM)</option>
         <option value="">— Load your own file —</option>
       </select>
-      <label class="file-btn">
-        Browse
-        <input type="file" id="audioFile" accept="audio/*">
-      </label>
+      <label class="file-btn">Browse<input type="file" id="audioFile" accept="audio/*"></label>
     </div>
     <div class="meter"><div class="meter-fill" id="meter"></div></div>
   </div>
 
-  <div class="card">
-    <h2>Controls</h2>
-    <div class="slider-row">
-      <label id="p1Label">Drive A</label>
-      <input type="range" id="p1" min="0" max="200" value="50">
-      <span class="val" id="p1Val">50</span>
+  <!-- DRIVE TAB -->
+  <div class="tab-content active" id="tab-drive">
+    <div class="card">
+      <h2>Drive Model</h2>
+      <select id="driveModelSelect">
+        <option value="blackstar" data-cond="2" data-p1="Drive A" data-p2="Drive B" data-desc="Dual-drive tube saturation">Blackstar — Tube (2-knob)</option>
+        <option value="dual_crush" data-cond="2" data-p1="Drive A" data-p2="Drive B" data-desc="FET + Zener dual section">Dual Crush — FET/Zener (2-knob)</option>
+        <option value="fet_clip" data-cond="1" data-p1="Drive" data-p2="" data-desc="FET clipping distortion">FET Clip — FET (1-knob)</option>
+        <option value="harmonic_cascade" data-cond="1" data-p1="Gain" data-p2="" data-desc="Tube cascade, H2 dominant">Harmonic Cascade — Tube (1-knob)</option>
+        <option value="warm_tape" data-cond="1" data-p1="Drive" data-p2="" data-desc="Warm tape saturation">Warm Tape — Tape (1-knob)</option>
+        <option value="tape_lo" data-cond="1" data-p1="Input" data-p2="" data-desc="Lo-fi cassette">Tape Lo — Cassette (1-knob)</option>
+      </select>
+      <div class="model-info"><span id="driveDesc">Dual-drive tube saturation</span></div>
     </div>
-    <div class="slider-row" id="p2Row">
-      <label id="p2Label">Drive B</label>
-      <input type="range" id="p2" min="0" max="200" value="0">
-      <span class="val" id="p2Val">0</span>
-    </div>
-    <div class="slider-row">
-      <label>Mix</label>
-      <input type="range" id="mix" min="0" max="100" value="100">
-      <span class="val" id="mixVal">100%</span>
-    </div>
-    <div class="slider-row">
-      <label>Input Gain</label>
-      <input type="range" id="gain" min="-12" max="30" value="0" step="0.5">
-      <span class="val" id="gainVal">0 dB</span>
+    <div class="card">
+      <h2>Drive Controls</h2>
+      <div class="slider-row"><label id="dp1Label">Drive A</label><input type="range" id="dp1" min="0" max="200" value="50"><span class="val" id="dp1Val">50</span></div>
+      <div class="slider-row" id="dp2Row"><label id="dp2Label">Drive B</label><input type="range" id="dp2" min="0" max="200" value="0"><span class="val" id="dp2Val">0</span></div>
+      <div class="slider-row"><label>Mix</label><input type="range" id="dMix" min="0" max="100" value="100"><span class="val" id="dMixVal">100%</span></div>
+      <div class="slider-row"><label>Input Gain</label><input type="range" id="dGain" min="-12" max="30" value="0" step="0.5"><span class="val" id="dGainVal">0 dB</span></div>
     </div>
   </div>
 
+  <!-- EQ TAB -->
+  <div class="tab-content" id="tab-eq">
+    <div class="card">
+      <h2>EQ Model</h2>
+      <select id="eqModelSelect">
+        <option value="bronze_eq" data-desc="Passive tube EQ — LF boost/atten, HF boost/atten">Bronze EQ — Passive Tube</option>
+        <option value="midrange_eq" data-desc="Midrange sculptor — 3-band peak/dip">Midrange EQ — Mid Sculptor</option>
+        <option value="channel_eq" data-desc="4-band channel EQ — LF, LMF, HMF, HF">Channel EQ — 4-Band</option>
+        <option value="passive_eq" data-desc="4-band passive EQ — boost/cut/out per band">Passive EQ — 4-Band Massive</option>
+        <option value="precision_eq" data-desc="4-band precision EQ — surgical tube EQ">Precision EQ — Tube Surgical</option>
+      </select>
+      <div class="model-info"><span id="eqDesc">Passive tube EQ — LF boost/atten, HF boost/atten</span></div>
+    </div>
+    <div class="card">
+      <h2>EQ Curve</h2>
+      <canvas id="eqCanvas"></canvas>
+    </div>
+    <div class="card eq-controls">
+      <h2>EQ Controls</h2>
+      <div id="eqSliders"></div>
+    </div>
+  </div>
+
+  <!-- Shared Transport -->
   <div class="btn-row">
     <button class="btn-play" id="playBtn" disabled>Play</button>
     <button class="btn-stop" id="stopBtn" disabled>Stop</button>
     <button class="btn-loop" id="loopBtn">Loop</button>
     <button class="btn-bypass" id="bypassBtn">Bypass</button>
   </div>
-
-  <div class="status" id="status">Loading default audio...</div>
+  <div class="status" id="status">Loading...</div>
 </div>
 
 <footer>
   <a href="https://github.com/unohee/NNStomps" target="_blank">GitHub</a> ·
-  5,441-param GRU · ONNX Runtime Web · ~22 KB per model
+  GRU Drive (~22 KB) · MLP EQ (~650 KB) · ONNX Runtime Web
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
 <script>
+// ========== State ==========
 const CHUNK = 128;
-const MODEL_BASE = 'models/';
-
-let audioCtx = null;
-let audioBuffer = null;
-let session = null;
-let currentModel = null;
-let isPlaying = false;
-let isBypassed = false;
-let isLooping = false;
+let audioCtx = null, audioBuffer = null;
+let driveSession = null, eqSession = null;
+let currentDriveModel = null, currentEqModel = null;
+let eqMetadata = null;
+let isPlaying = false, isBypassed = false, isLooping = false;
 let stopFn = null;
+let activeTab = 'drive';
 
-const modelSelect = document.getElementById('modelSelect');
-const audioSelect = document.getElementById('audioSelect');
-const audioFile = document.getElementById('audioFile');
-const playBtn = document.getElementById('playBtn');
-const stopBtn = document.getElementById('stopBtn');
-const loopBtn = document.getElementById('loopBtn');
-const bypassBtn = document.getElementById('bypassBtn');
-const statusEl = document.getElementById('status');
-const meter = document.getElementById('meter');
-const p1 = document.getElementById('p1');
-const p2 = document.getElementById('p2');
-const p1Val = document.getElementById('p1Val');
-const p2Val = document.getElementById('p2Val');
-const p1Label = document.getElementById('p1Label');
-const p2Label = document.getElementById('p2Label');
-const p2Row = document.getElementById('p2Row');
-const mixSlider = document.getElementById('mix');
-const mixVal = document.getElementById('mixVal');
-const gainSlider = document.getElementById('gain');
-const gainVal = document.getElementById('gainVal');
-const modelDesc = document.getElementById('modelDesc');
+// ========== DOM ==========
+const $ = id => document.getElementById(id);
+const statusEl = $('status'), meter = $('meter');
+const playBtn = $('playBtn'), stopBtn = $('stopBtn');
 
-p1.oninput = () => p1Val.textContent = p1.value;
-p2.oninput = () => p2Val.textContent = p2.value;
-mixSlider.oninput = () => mixVal.textContent = mixSlider.value + '%';
-gainSlider.oninput = () => gainVal.textContent = gainSlider.value + ' dB';
+// ========== Tabs ==========
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const id = tab.dataset.tab;
+    $('tab-' + id).classList.add('active');
+    activeTab = id;
+    if (id === 'eq' && !eqSession) $('eqModelSelect').dispatchEvent(new Event('change'));
+  };
+});
 
-// --- Audio loading ---
+// ========== Audio Loading ==========
+async function ensureCtx() { if (!audioCtx) audioCtx = new AudioContext({sampleRate:44100}); return audioCtx; }
 
-async function ensureAudioCtx() {
-  if (!audioCtx) audioCtx = new AudioContext({ sampleRate: 44100 });
-  return audioCtx;
-}
-
-async function loadAudioFromUrl(url) {
+async function loadAudioUrl(url) {
   statusEl.textContent = 'Loading audio...';
-  const ctx = await ensureAudioCtx();
-  const resp = await fetch(url);
-  const buf = await resp.arrayBuffer();
-  audioBuffer = await ctx.decodeAudioData(buf);
+  const ctx = await ensureCtx();
+  audioBuffer = await ctx.decodeAudioData(await (await fetch(url)).arrayBuffer());
   statusEl.textContent = `Loaded (${audioBuffer.duration.toFixed(1)}s)`;
   playBtn.disabled = false;
 }
 
-async function loadAudioFromFile(file) {
-  statusEl.textContent = 'Decoding audio...';
-  const ctx = await ensureAudioCtx();
-  const buf = await file.arrayBuffer();
-  audioBuffer = await ctx.decodeAudioData(buf);
+$('audioSelect').onchange = async () => {
+  if (stopFn) stopFn();
+  const url = $('audioSelect').value;
+  if (url) { await loadAudioUrl(url); if (!driveSession) $('driveModelSelect').dispatchEvent(new Event('change')); }
+};
+
+$('audioFile').onchange = async e => {
+  const file = e.target.files[0]; if (!file) return;
+  if (stopFn) stopFn();
+  const opt = document.createElement('option'); opt.value='__file__'; opt.textContent=file.name; opt.selected=true;
+  $('audioSelect').querySelectorAll('[value="__file__"]').forEach(o=>o.remove());
+  $('audioSelect').insertBefore(opt, $('audioSelect').lastElementChild);
+  const ctx = await ensureCtx();
+  audioBuffer = await ctx.decodeAudioData(await file.arrayBuffer());
   statusEl.textContent = `Loaded: ${file.name} (${audioBuffer.duration.toFixed(1)}s)`;
   playBtn.disabled = false;
+};
+
+// ========== Drive Model ==========
+const dSel = $('driveModelSelect');
+const dp1=$('dp1'),dp2=$('dp2'),dMix=$('dMix'),dGain=$('dGain');
+dp1.oninput=()=>$('dp1Val').textContent=dp1.value;
+dp2.oninput=()=>$('dp2Val').textContent=dp2.value;
+dMix.oninput=()=>$('dMixVal').textContent=dMix.value+'%';
+dGain.oninput=()=>$('dGainVal').textContent=dGain.value+' dB';
+
+dSel.onchange = async () => {
+  const o = dSel.selectedOptions[0];
+  $('dp1Label').textContent=o.dataset.p1; $('dp2Label').textContent=o.dataset.p2;
+  $('dp2Row').style.display = parseInt(o.dataset.cond)>=2?'flex':'none';
+  $('driveDesc').textContent=o.dataset.desc;
+  dp1.value=50;$('dp1Val').textContent='50';dp2.value=0;$('dp2Val').textContent='0';
+  await loadDriveModel(dSel.value);
+};
+
+async function loadDriveModel(name) {
+  if (currentDriveModel===name && driveSession) return;
+  statusEl.textContent=`Loading drive: ${name}...`;
+  driveSession = await ort.InferenceSession.create('models/'+name+'.onnx',{executionProviders:['wasm']});
+  currentDriveModel=name;
+  statusEl.textContent=audioBuffer?`Drive loaded: ${name}`:`Drive loaded: ${name} — load audio`;
 }
 
-audioSelect.onchange = async () => {
-  if (stopFn) stopFn();
-  const url = audioSelect.value;
-  if (url) {
-    await loadAudioFromUrl(url);
-    if (!session) await loadModel(modelSelect.value);
-  }
+// ========== EQ Model ==========
+const eqSel = $('eqModelSelect');
+const eqCanvas = $('eqCanvas');
+const eqCtx2d = eqCanvas.getContext('2d');
+
+eqSel.onchange = async () => {
+  $('eqDesc').textContent = eqSel.selectedOptions[0].dataset.desc;
+  await loadEqModel(eqSel.value);
 };
 
-audioFile.onchange = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (stopFn) stopFn();
-  // Add to dropdown
-  const opt = document.createElement('option');
-  opt.value = '__file__';
-  opt.textContent = file.name;
-  opt.selected = true;
-  // Remove previous custom files
-  audioSelect.querySelectorAll('option[value="__file__"]').forEach(o => o.remove());
-  audioSelect.insertBefore(opt, audioSelect.lastElementChild);
-  await loadAudioFromFile(file);
-  if (!session) await loadModel(modelSelect.value);
-};
-
-// --- Model ---
-
-modelSelect.onchange = async () => {
-  const opt = modelSelect.selectedOptions[0];
-  const condDim = parseInt(opt.dataset.cond);
-  p1Label.textContent = opt.dataset.p1;
-  p2Label.textContent = opt.dataset.p2;
-  p2Row.style.display = condDim >= 2 ? 'flex' : 'none';
-  modelDesc.textContent = opt.dataset.desc;
-  p1.value = 50; p1Val.textContent = '50';
-  p2.value = 0; p2Val.textContent = '0';
-  await loadModel(modelSelect.value);
-};
-
-async function loadModel(name) {
-  if (currentModel === name && session) return;
-  statusEl.textContent = `Loading model: ${name}...`;
-  try {
-    session = await ort.InferenceSession.create(MODEL_BASE + name + '.onnx', {
-      executionProviders: ['wasm'],
-    });
-    currentModel = name;
-    statusEl.textContent = audioBuffer
-      ? `Model loaded: ${name} — ready to play`
-      : `Model loaded: ${name} — load audio to start`;
-  } catch (e) {
-    statusEl.textContent = `Failed: ${e.message}`;
-  }
+async function loadEqModel(name) {
+  if (currentEqModel===name && eqSession) return;
+  statusEl.textContent=`Loading EQ: ${name}...`;
+  eqSession = await ort.InferenceSession.create('models/eq/'+name+'.onnx',{executionProviders:['wasm']});
+  const metaResp = await fetch('models/eq/'+name+'_meta.json');
+  eqMetadata = await metaResp.json();
+  currentEqModel = name;
+  buildEqSliders(eqMetadata.controls);
+  await updateEqCurve();
+  statusEl.textContent=audioBuffer?`EQ loaded: ${name}`:`EQ loaded: ${name} — load audio`;
 }
 
-// --- Playback with loop ---
+function buildEqSliders(controls) {
+  const container = $('eqSliders');
+  container.innerHTML = '';
+  controls.forEach((c, i) => {
+    if (c.type === 'categorical') {
+      const row = document.createElement('div'); row.className='slider-row';
+      const lbl = document.createElement('label'); lbl.textContent=c.name; row.appendChild(lbl);
+      const sel = document.createElement('select'); sel.id='eq_p'+i; sel.style.flex='1';
+      sel.style.background='var(--bg)';sel.style.color='var(--text)';sel.style.border='1px solid var(--border)';
+      sel.style.borderRadius='6px';sel.style.padding='.3rem';sel.style.fontFamily='inherit';sel.style.fontSize='.85rem';
+      c.options.forEach(o=>{const op=document.createElement('option');op.value=o;op.textContent=o;sel.appendChild(op);});
+      sel.value=c.default;
+      sel.onchange=()=>updateEqCurve();
+      row.appendChild(sel);
+      container.appendChild(row);
+    } else {
+      const row = document.createElement('div'); row.className='slider-row';
+      const lbl = document.createElement('label'); lbl.textContent=c.name; row.appendChild(lbl);
+      const inp = document.createElement('input'); inp.type='range'; inp.id='eq_p'+i;
+      inp.min=c.min; inp.max=c.max; inp.value=c.default; inp.step=c.step||0.5;
+      inp.style.flex='1'; inp.style.accentColor='var(--accent)';
+      const val = document.createElement('span'); val.className='val'; val.id='eq_v'+i; val.textContent=c.default;
+      inp.oninput=()=>{val.textContent=parseFloat(inp.value).toFixed(1);updateEqCurve();};
+      row.appendChild(inp); row.appendChild(val);
+      container.appendChild(row);
+    }
+  });
+}
 
+function getEqParams() {
+  if (!eqMetadata) return [];
+  const params = [];
+  eqMetadata.controls.forEach((c, i) => {
+    if (c.type === 'categorical') {
+      const sel = $('eq_p'+i);
+      const val = sel ? sel.value : c.default;
+      c.options.forEach(o => params.push(o===val?1:0));
+    } else {
+      const inp = $('eq_p'+i);
+      const val = inp ? parseFloat(inp.value) : c.default;
+      params.push((val - c.min) / (c.max - c.min));
+    }
+  });
+  return params;
+}
+
+async function updateEqCurve() {
+  if (!eqSession || !eqMetadata) return;
+  const params = getEqParams();
+  const paramTensor = new ort.Tensor('float32', new Float32Array(params), [1, params.length]);
+  const result = await eqSession.run({parameters: paramTensor});
+  const fir = result.fir_coefficients.data;
+
+  // FFT for display
+  const N = 4096;
+  const re = new Float64Array(N); const im = new Float64Array(N);
+  for (let i=0;i<Math.min(fir.length,N);i++) re[i]=fir[i];
+  // simple DFT for display (only need magnitude)
+  const mags = [];
+  const freqs = [];
+  const nBins = 200;
+  for (let b=0;b<nBins;b++) {
+    const f = 20 * Math.pow(22050/20, b/(nBins-1));
+    freqs.push(f);
+    const k = Math.round(f/44100*N);
+    let sumR=0,sumI=0;
+    for(let n=0;n<Math.min(fir.length,N);n++){
+      const angle=-2*Math.PI*k*n/N;
+      sumR+=fir[n]*Math.cos(angle);
+      sumI+=fir[n]*Math.sin(angle);
+    }
+    mags.push(20*Math.log10(Math.sqrt(sumR*sumR+sumI*sumI)+1e-10));
+  }
+  drawEqCurve(freqs, mags);
+}
+
+function drawEqCurve(freqs, mags) {
+  const c = eqCanvas;
+  const dpr = window.devicePixelRatio||1;
+  c.width = c.clientWidth*dpr; c.height = c.clientHeight*dpr;
+  const ctx = eqCtx2d;
+  ctx.scale(dpr,dpr);
+  const w=c.clientWidth, h=c.clientHeight;
+
+  ctx.clearRect(0,0,w,h);
+
+  // grid
+  ctx.strokeStyle='#333';ctx.lineWidth=0.5;
+  const dbRange=[-20,20];
+  for(let db=-15;db<=15;db+=5){
+    const y=h/2-(db/(dbRange[1]-dbRange[0]))*h;
+    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();
+  }
+  // 0dB line
+  ctx.strokeStyle='#555';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke();
+
+  // freq labels
+  ctx.fillStyle='#666';ctx.font='10px monospace';
+  [100,1000,10000].forEach(f=>{
+    const x=Math.log(f/20)/Math.log(22050/20)*w;
+    ctx.fillText(f>=1000?(f/1000)+'k':f+'',x-10,h-4);
+  });
+
+  // curve
+  ctx.strokeStyle='#f59e0b';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<freqs.length;i++){
+    const x=Math.log(freqs[i]/20)/Math.log(22050/20)*w;
+    const y=h/2-(mags[i]/(dbRange[1]-dbRange[0]))*h;
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+}
+
+// ========== Playback ==========
 playBtn.onclick = async () => {
-  if (isPlaying || !audioBuffer || !session) return;
-  if (audioCtx.state === 'suspended') await audioCtx.resume();
+  if (isPlaying||!audioBuffer) return;
+  if (activeTab==='drive' && !driveSession) return;
+  if (activeTab==='eq' && !eqSession) return;
+  if (audioCtx.state==='suspended') await audioCtx.resume();
 
-  const bufferSize = 2048;
-  const scriptNode = audioCtx.createScriptProcessor(bufferSize, 1, 1);
+  const scriptNode = audioCtx.createScriptProcessor(2048,1,1);
   const monoData = audioBuffer.getChannelData(0);
   let playPos = 0;
-
-  const opt = modelSelect.selectedOptions[0];
-  const condDim = parseInt(opt.dataset.cond);
-  const hiddenSize = 40;
+  const hiddenSize=40;
   let hiddenData = new Float32Array(hiddenSize);
+  // EQ: cache FIR + overlap buffer
+  let eqFir = null, eqFirH = null, eqOverlap = null, eqFftLen = 0;
 
-  const paramInterval = setInterval(() => {
-    meter.style.width = Math.min(100, (playPos / monoData.length) * 100) + '%';
-  }, 50);
+  if (activeTab==='eq' && eqSession) {
+    const params = getEqParams();
+    const pt = new ort.Tensor('float32',new Float32Array(params),[1,params.length]);
+    const r = await eqSession.run({parameters:pt});
+    eqFir = r.fir_coefficients.data;
+    eqFftLen=1;while(eqFftLen<2048+eqFir.length)eqFftLen*=2;
+    eqOverlap=new Float32Array(eqFftLen);
+  }
 
-  scriptNode.onaudioprocess = async (e) => {
+  const paramInterval = setInterval(async()=>{
+    meter.style.width=Math.min(100,(playPos/monoData.length)*100)+'%';
+    // update EQ FIR if params changed
+    if(activeTab==='eq'&&eqSession){
+      const params=getEqParams();
+      const pt=new ort.Tensor('float32',new Float32Array(params),[1,params.length]);
+      const r=await eqSession.run({parameters:pt});
+      eqFir=r.fir_coefficients.data;
+    }
+  },100);
+
+  scriptNode.onaudioprocess = async e => {
     const output = e.outputBuffer.getChannelData(0);
     const len = output.length;
+    if(playPos>=monoData.length){if(isLooping){playPos=0;hiddenData=new Float32Array(hiddenSize);if(eqOverlap)eqOverlap.fill(0);}else{output.fill(0);return;}}
 
-    if (playPos >= monoData.length) {
-      if (isLooping) {
-        playPos = 0;
-        hiddenData = new Float32Array(hiddenSize);
-      } else {
-        output.fill(0);
-        return;
-      }
-    }
+    const remaining=monoData.length-playPos;
+    const chunkLen=Math.min(len,remaining);
+    const inputChunk=new Float32Array(chunkLen);
+    const curGain = activeTab==='drive'?Math.pow(10,dGain.value/20):1.0;
+    for(let i=0;i<chunkLen;i++) inputChunk[i]=monoData[playPos+i]*curGain;
 
-    const curP1 = p1.value / 100;
-    const curP2 = p2.value / 100;
-    const curMix = mixSlider.value / 100;
-    const curGain = Math.pow(10, gainSlider.value / 20);
-
-    const remaining = monoData.length - playPos;
-    const chunkLen = Math.min(len, remaining);
-
-    const inputChunk = new Float32Array(chunkLen);
-    for (let i = 0; i < chunkLen; i++) {
-      inputChunk[i] = monoData[playPos + i] * curGain;
-    }
-
-    if (isBypassed) {
-      for (let i = 0; i < len; i++) output[i] = i < chunkLen ? inputChunk[i] : 0;
-      playPos += chunkLen;
-      return;
-    }
+    if(isBypassed){for(let i=0;i<len;i++)output[i]=i<chunkLen?inputChunk[i]:0;playPos+=chunkLen;return;}
 
     try {
-      const processed = new Float32Array(chunkLen);
-      let pos = 0;
+      if (activeTab==='drive' && driveSession) {
+        // GRU drive processing
+        const opt=dSel.selectedOptions[0];
+        const condDim=parseInt(opt.dataset.cond);
+        const curP1=dp1.value/100,curP2=dp2.value/100,curMix=dMix.value/100;
+        const processed=new Float32Array(chunkLen);
+        let pos=0;
+        while(pos<chunkLen){
+          const bl=Math.min(CHUNK,chunkLen-pos);
+          const pb=new Float32Array(CHUNK);pb.set(inputChunk.subarray(pos,pos+bl));
+          const at=new ort.Tensor('float32',pb,[1,CHUNK,1]);
+          const cd=condDim===2?[curP1,curP2]:[curP1];
+          const ct=new ort.Tensor('float32',new Float32Array(cd),[1,condDim]);
+          const ht=new ort.Tensor('float32',hiddenData,[1,1,hiddenSize]);
+          const r=await driveSession.run({audio:at,cond:ct,hidden_in:ht});
+          const od=r.output.data;
+          for(let i=0;i<bl;i++)processed[pos+i]=od[i];
+          hiddenData=new Float32Array(r.hidden_out.data);
+          pos+=bl;
+        }
+        for(let i=0;i<len;i++)output[i]=i<chunkLen?inputChunk[i]*(1-curMix)+processed[i]*curMix:0;
 
-      while (pos < chunkLen) {
-        const blockLen = Math.min(CHUNK, chunkLen - pos);
-        const paddedBlock = new Float32Array(CHUNK);
-        paddedBlock.set(inputChunk.subarray(pos, pos + blockLen));
-
-        const audioTensor = new ort.Tensor('float32', paddedBlock, [1, CHUNK, 1]);
-        const condData = condDim === 2 ? [curP1, curP2] : [curP1];
-        const condTensor = new ort.Tensor('float32', new Float32Array(condData), [1, condDim]);
-        const hiddenTensor = new ort.Tensor('float32', hiddenData, [1, 1, hiddenSize]);
-
-        const result = await session.run({
-          audio: audioTensor, cond: condTensor, hidden_in: hiddenTensor,
-        });
-
-        const outData = result.output.data;
-        for (let i = 0; i < blockLen; i++) processed[pos + i] = outData[i];
-        hiddenData = new Float32Array(result.hidden_out.data);
-        pos += blockLen;
+      } else if (activeTab==='eq' && eqFir) {
+        // FIR EQ processing (overlap-add)
+        const fftLen=eqFftLen;
+        // zero-pad input
+        const xPad=new Float32Array(fftLen);
+        for(let i=0;i<chunkLen;i++)xPad[i]=inputChunk[i];
+        // simple time-domain convolution for short FIR, or use the cached approach
+        const yFull=new Float32Array(fftLen);
+        // direct convolution (FIR is short enough)
+        for(let n=0;n<chunkLen+eqFir.length-1&&n<fftLen;n++){
+          let sum=0;
+          for(let k=0;k<eqFir.length;k++){
+            if(n-k>=0&&n-k<chunkLen)sum+=xPad[n-k]*eqFir[k];
+          }
+          yFull[n]=sum;
+        }
+        // overlap-add
+        for(let i=0;i<fftLen;i++)yFull[i]+=eqOverlap[i];
+        for(let i=0;i<chunkLen;i++)output[i]=yFull[i];
+        for(let i=chunkLen;i<len;i++)output[i]=0;
+        // save overlap
+        eqOverlap.fill(0);
+        for(let i=chunkLen;i<fftLen;i++)eqOverlap[i-chunkLen]=yFull[i];
       }
-
-      for (let i = 0; i < len; i++) {
-        output[i] = i < chunkLen
-          ? inputChunk[i] * (1 - curMix) + processed[i] * curMix
-          : 0;
-      }
-    } catch (err) {
-      for (let i = 0; i < len; i++) output[i] = i < chunkLen ? inputChunk[i] : 0;
+    } catch(err) {
+      for(let i=0;i<len;i++)output[i]=i<chunkLen?inputChunk[i]:0;
     }
-
-    playPos += chunkLen;
+    playPos+=chunkLen;
   };
 
   scriptNode.connect(audioCtx.destination);
-  isPlaying = true;
-  playBtn.classList.add('playing');
-  playBtn.textContent = 'Playing...';
-  playBtn.disabled = true;
-  stopBtn.disabled = false;
-  statusEl.textContent = isLooping
-    ? 'Looping — tweak the knobs in real-time!'
-    : 'Playing — tweak the knobs in real-time!';
+  isPlaying=true;playBtn.classList.add('playing');playBtn.textContent='Playing...';playBtn.disabled=true;stopBtn.disabled=false;
+  statusEl.textContent=isLooping?'Looping — tweak knobs in real-time!':'Playing — tweak knobs in real-time!';
 
-  stopFn = () => {
-    scriptNode.disconnect();
-    clearInterval(paramInterval);
-    isPlaying = false;
-    playBtn.classList.remove('playing');
-    playBtn.textContent = 'Play';
-    playBtn.disabled = false;
-    stopBtn.disabled = true;
-    meter.style.width = '0%';
-    stopFn = null;
-    statusEl.textContent = 'Stopped';
-  };
+  stopFn=()=>{scriptNode.disconnect();clearInterval(paramInterval);isPlaying=false;playBtn.classList.remove('playing');playBtn.textContent='Play';playBtn.disabled=false;stopBtn.disabled=true;meter.style.width='0%';stopFn=null;statusEl.textContent='Stopped';};
+  stopBtn.onclick=()=>{if(stopFn)stopFn();};
 
-  stopBtn.onclick = () => { if (stopFn) stopFn(); };
-
-  // Auto-stop when done (only if not looping)
-  const checkDone = setInterval(() => {
-    if (!isLooping && playPos >= monoData.length) {
-      if (stopFn) stopFn();
-      clearInterval(checkDone);
-      statusEl.textContent = 'Playback complete';
-    }
-    if (!isPlaying) clearInterval(checkDone);
-  }, 200);
+  const checkDone=setInterval(()=>{
+    if(!isLooping&&playPos>=monoData.length){if(stopFn)stopFn();clearInterval(checkDone);statusEl.textContent='Playback complete';}
+    if(!isPlaying)clearInterval(checkDone);
+  },200);
 };
 
-// --- Loop toggle ---
-loopBtn.onclick = () => {
-  isLooping = !isLooping;
-  loopBtn.classList.toggle('active', isLooping);
-  loopBtn.textContent = isLooping ? 'Loop ON' : 'Loop';
-  if (isPlaying) {
-    statusEl.textContent = isLooping
-      ? 'Looping — tweak the knobs in real-time!'
-      : 'Playing — tweak the knobs in real-time!';
-  }
-};
+$('loopBtn').onclick=()=>{isLooping=!isLooping;$('loopBtn').classList.toggle('active',isLooping);$('loopBtn').textContent=isLooping?'Loop ON':'Loop';};
+$('bypassBtn').onclick=()=>{isBypassed=!isBypassed;$('bypassBtn').classList.toggle('active',isBypassed);$('bypassBtn').textContent=isBypassed?'Bypass ON':'Bypass';};
 
-// --- Bypass ---
-bypassBtn.onclick = () => {
-  isBypassed = !isBypassed;
-  bypassBtn.classList.toggle('active', isBypassed);
-  bypassBtn.textContent = isBypassed ? 'Bypass ON' : 'Bypass';
-};
-
-// --- Init: load default audio + model ---
-(async () => {
-  modelSelect.dispatchEvent(new Event('change'));
-  await loadAudioFromUrl('audio/amen_break.mp3');
-  if (!session) await loadModel(modelSelect.value);
+// ========== Init ==========
+(async()=>{
+  dSel.dispatchEvent(new Event('change'));
+  await loadAudioUrl('audio/amen_break.mp3');
 })();
 </script>
 </body>
