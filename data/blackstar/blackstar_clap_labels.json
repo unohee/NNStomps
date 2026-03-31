@@ -1,0 +1,131 @@
+{
+  "labels": [
+    "pentode=0.0, triode=0.0",
+    "pentode=0.0, triode=25.0",
+    "pentode=0.0, triode=50.0",
+    "pentode=0.0, triode=75.0",
+    "pentode=0.0, triode=100.0",
+    "pentode=25.0, triode=0.0",
+    "pentode=25.0, triode=25.0",
+    "pentode=25.0, triode=50.0",
+    "pentode=25.0, triode=75.0",
+    "pentode=25.0, triode=100.0",
+    "pentode=50.0, triode=0.0",
+    "pentode=50.0, triode=25.0",
+    "pentode=50.0, triode=50.0",
+    "pentode=50.0, triode=75.0",
+    "pentode=50.0, triode=100.0",
+    "pentode=75.0, triode=0.0",
+    "pentode=75.0, triode=25.0",
+    "pentode=75.0, triode=50.0",
+    "pentode=75.0, triode=75.0",
+    "pentode=75.0, triode=100.0",
+    "pentode=100.0, triode=0.0",
+    "pentode=100.0, triode=25.0",
+    "pentode=100.0, triode=50.0",
+    "pentode=100.0, triode=75.0",
+    "pentode=100.0, triode=100.0"
+  ],
+  "params": [
+    {
+      "pentode": 0.0,
+      "triode": 0.0
+    },
+    {
+      "pentode": 0.0,
+      "triode": 25.0
+    },
+    {
+      "pentode": 0.0,
+      "triode": 50.0
+    },
+    {
+      "pentode": 0.0,
+      "triode": 75.0
+    },
+    {
+      "pentode": 0.0,
+      "triode": 100.0
+    },
+    {
+      "pentode": 25.0,
+      "triode": 0.0
+    },
+    {
+      "pentode": 25.0,
+      "triode": 25.0
+    },
+    {
+      "pentode": 25.0,
+      "triode": 50.0
+    },
+    {
+      "pentode": 25.0,
+      "triode": 75.0
+    },
+    {
+      "pentode": 25.0,
+      "triode": 100.0
+    },
+    {
+      "pentode": 50.0,
+      "triode": 0.0
+    },
+    {
+      "pentode": 50.0,
+      "triode": 25.0
+    },
+    {
+      "pentode": 50.0,
+      "triode": 50.0
+    },
+    {
+      "pentode": 50.0,
+      "triode": 75.0
+    },
+    {
+      "pentode": 50.0,
+      "triode": 100.0
+    },
+    {
+      "pentode": 75.0,
+      "triode": 0.0
+    },
+    {
+      "pentode": 75.0,
+      "triode": 25.0
+    },
+    {
+      "pentode": 75.0,
+      "triode": 50.0
+    },
+    {
+      "pentode": 75.0,
+      "triode": 75.0
+    },
+    {
+      "pentode": 75.0,
+      "triode": 100.0
+    },
+    {
+      "pentode": 100.0,
+      "triode": 0.0
+    },
+    {
+      "pentode": 100.0,
+      "triode": 25.0
+    },
+    {
+      "pentode": 100.0,
+      "triode": 50.0
+    },
+    {
+      "pentode": 100.0,
+      "triode": 75.0
+    },
+    {
+      "pentode": 100.0,
+      "triode": 100.0
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+__pycache__/
+*.py[oc]
+build/
+dist/
+*.egg-info
+.venv/
+.pytest_cache/
+*.wav
+.DS_Store
+
+# 학습된 모델 (예제 blackstar만 트래킹)
+models/
+!models/.gitkeep
+
+# 학습 데이터
+training_data/
+audio_demos/
+
+# 플러그인 프로파일 데이터 (예제 blackstar만 트래킹)
+data/*
+!data/blackstar/
+
+# 로컬 전용 스크립트 (상용 플러그인 경로 포함)
+scripts/local/
+
+
+
+
+
+
+
+
+# trash
+trash/
+
+# 기타
+*.pt
+*.pth
+*.onnx
