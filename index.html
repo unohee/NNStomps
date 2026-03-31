@@ -147,12 +147,12 @@
     <h2>Controls</h2>
     <div class="slider-row">
       <label id="p1Label">Drive A</label>
-      <input type="range" id="p1" min="0" max="100" value="50">
+      <input type="range" id="p1" min="0" max="200" value="50">
       <span class="val" id="p1Val">50</span>
     </div>
     <div class="slider-row" id="p2Row">
       <label id="p2Label">Drive B</label>
-      <input type="range" id="p2" min="0" max="100" value="0">
+      <input type="range" id="p2" min="0" max="200" value="0">
       <span class="val" id="p2Val">0</span>
     </div>
     <div class="slider-row">
@@ -162,7 +162,7 @@
     </div>
     <div class="slider-row">
       <label>Input Gain</label>
-      <input type="range" id="gain" min="-12" max="12" value="0" step="0.5">
+      <input type="range" id="gain" min="-12" max="30" value="0" step="0.5">
       <span class="val" id="gainVal">0 dB</span>
     </div>
   </div>
@@ -286,7 +286,7 @@ playBtn.onclick = async () => {
       return;
     }
 
-    const curP1 = p1.value / 100;
+    const curP1 = p1.value / 100;  // >1.0 = extrapolation beyond trained range
     const curP2 = p2.value / 100;
     const curMix = mixSlider.value / 100;
     const curGain = Math.pow(10, gainSlider.value / 20);
