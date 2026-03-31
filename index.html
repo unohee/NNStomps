@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NNStomps — Neural Drive</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --accent: #e94560;
+    --accent2: #f59e0b;
+    --text: #eee;
+    --text-dim: #888;
+    --border: #333;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 0.3rem; }
+  .subtitle { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 2rem; }
+  .container {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem;
+  }
+  .card h2 { font-size: 0.9rem; color: var(--accent2); margin-bottom: 0.8rem; }
+  label { font-size: 0.8rem; color: var(--text-dim); display: block; margin-bottom: 0.3rem; }
+  select, input[type="file"] {
+    width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+  }
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.6rem;
+  }
+  .slider-row label { width: 90px; flex-shrink: 0; margin-bottom: 0; }
+  .slider-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+  .slider-row .val { width: 45px; text-align: right; font-size: 0.85rem; color: var(--accent2); }
+  .btn-row { display: flex; gap: 0.6rem; margin-top: 0.5rem; }
+  button {
+    flex: 1;
+    padding: 0.7rem;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  button:hover { filter: brightness(1.1); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-play { background: var(--accent); color: #fff; }
+  .btn-play.playing { background: #c0392b; }
+  .btn-stop { background: var(--border); color: var(--text); }
+  .btn-bypass { background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
+  .btn-bypass.active { border-color: var(--accent2); color: var(--accent2); }
+  .status {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    min-height: 1.2rem;
+  }
+  .meter {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+  }
+  .meter-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transition: width 0.05s;
+  }
+  .model-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 0.4rem;
+  }
+  footer {
+    margin-top: 2rem;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+  footer a { color: var(--accent2); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<h1>NNStomps — Neural Drive</h1>
+<p class="subtitle">Real-time GRU saturation/distortion in the browser</p>
+
+<div class="container">
+  <div class="card">
+    <h2>Model</h2>
+    <select id="modelSelect">
+      <option value="blackstar" data-cond="2" data-p1="Drive A" data-p2="Drive B" data-desc="Dual-drive tube saturation">Blackstar — Tube (2-knob)</option>
+      <option value="dual_crush" data-cond="2" data-p1="Drive A" data-p2="Drive B" data-desc="FET + Zener dual section">Dual Crush — FET/Zener (2-knob)</option>
+      <option value="fet_clip" data-cond="1" data-p1="Drive" data-p2="" data-desc="FET clipping distortion">FET Clip — FET (1-knob)</option>
+      <option value="harmonic_cascade" data-cond="1" data-p1="Gain" data-p2="" data-desc="Tube cascade, H2 dominant">Harmonic Cascade — Tube (1-knob)</option>
+      <option value="warm_tape" data-cond="1" data-p1="Drive" data-p2="" data-desc="Warm tape saturation">Warm Tape — Tape (1-knob)</option>
+      <option value="tape_lo" data-cond="1" data-p1="Input" data-p2="" data-desc="Lo-fi cassette">Tape Lo — Cassette (1-knob)</option>
+    </select>
+    <div class="model-info">
+      <span id="modelDesc">Dual-drive tube saturation</span>
+      <span id="modelSize"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Audio</h2>
+    <label>Load an audio file</label>
+    <input type="file" id="audioFile" accept="audio/*">
+    <div class="meter"><div class="meter-fill" id="meter"></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Controls</h2>
+    <div class="slider-row">
+      <label id="p1Label">Drive A</label>
+      <input type="range" id="p1" min="0" max="100" value="50">
+      <span class="val" id="p1Val">50</span>
+    </div>
+    <div class="slider-row" id="p2Row">
+      <label id="p2Label">Drive B</label>
+      <input type="range" id="p2" min="0" max="100" value="0">
+      <span class="val" id="p2Val">0</span>
+    </div>
+    <div class="slider-row">
+      <label>Mix</label>
+      <input type="range" id="mix" min="0" max="100" value="100">
+      <span class="val" id="mixVal">100%</span>
+    </div>
+    <div class="slider-row">
+      <label>Input Gain</label>
+      <input type="range" id="gain" min="-12" max="12" value="0" step="0.5">
+      <span class="val" id="gainVal">0 dB</span>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-play" id="playBtn" disabled>Play</button>
+    <button class="btn-stop" id="stopBtn" disabled>Stop</button>
+    <button class="btn-bypass" id="bypassBtn">Bypass</button>
+  </div>
+
+  <div class="status" id="status">Load an audio file to start</div>
+</div>
+
+<footer>
+  <a href="https://github.com/unohee/NNStomps" target="_blank">GitHub</a> ·
+  5,441-param GRU · ONNX Runtime Web · ~22 KB per model
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<script>
+const CHUNK = 128;
+const MODEL_BASE = 'models/';
+
+let audioCtx = null;
+let audioBuffer = null;
+let session = null;
+let currentModel = null;
+let isPlaying = false;
+let isBypassed = false;
+let stopFn = null;
+
+const modelSelect = document.getElementById('modelSelect');
+const audioFile = document.getElementById('audioFile');
+const playBtn = document.getElementById('playBtn');
+const stopBtn = document.getElementById('stopBtn');
+const bypassBtn = document.getElementById('bypassBtn');
+const statusEl = document.getElementById('status');
+const meter = document.getElementById('meter');
+const p1 = document.getElementById('p1');
+const p2 = document.getElementById('p2');
+const p1Val = document.getElementById('p1Val');
+const p2Val = document.getElementById('p2Val');
+const p1Label = document.getElementById('p1Label');
+const p2Label = document.getElementById('p2Label');
+const p2Row = document.getElementById('p2Row');
+const mixSlider = document.getElementById('mix');
+const mixVal = document.getElementById('mixVal');
+const gainSlider = document.getElementById('gain');
+const gainVal = document.getElementById('gainVal');
+const modelDesc = document.getElementById('modelDesc');
+
+p1.oninput = () => p1Val.textContent = p1.value;
+p2.oninput = () => p2Val.textContent = p2.value;
+mixSlider.oninput = () => mixVal.textContent = mixSlider.value + '%';
+gainSlider.oninput = () => gainVal.textContent = gainSlider.value + ' dB';
+
+modelSelect.onchange = async () => {
+  const opt = modelSelect.selectedOptions[0];
+  const condDim = parseInt(opt.dataset.cond);
+  p1Label.textContent = opt.dataset.p1;
+  p2Label.textContent = opt.dataset.p2;
+  p2Row.style.display = condDim >= 2 ? 'flex' : 'none';
+  modelDesc.textContent = opt.dataset.desc;
+  p1.value = 50; p1Val.textContent = '50';
+  p2.value = 0; p2Val.textContent = '0';
+  await loadModel(modelSelect.value);
+};
+
+audioFile.onchange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  statusEl.textContent = 'Decoding audio...';
+  if (!audioCtx) audioCtx = new AudioContext({ sampleRate: 44100 });
+  const buf = await file.arrayBuffer();
+  audioBuffer = await audioCtx.decodeAudioData(buf);
+  statusEl.textContent = `Loaded: ${file.name} (${audioBuffer.duration.toFixed(1)}s)`;
+  playBtn.disabled = false;
+  if (!session) await loadModel(modelSelect.value);
+};
+
+async function loadModel(name) {
+  if (currentModel === name && session) return;
+  statusEl.textContent = `Loading model: ${name}...`;
+  try {
+    session = await ort.InferenceSession.create(MODEL_BASE + name + '.onnx', {
+      executionProviders: ['wasm'],
+    });
+    currentModel = name;
+    statusEl.textContent = audioBuffer
+      ? `Model loaded: ${name} — ready to play`
+      : `Model loaded: ${name} — load audio to start`;
+  } catch (e) {
+    statusEl.textContent = `Failed: ${e.message}`;
+  }
+}
+
+playBtn.onclick = async () => {
+  if (isPlaying || !audioBuffer || !session) return;
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+  const bufferSize = 2048;
+  const scriptNode = audioCtx.createScriptProcessor(bufferSize, 1, 1);
+  const monoData = audioBuffer.getChannelData(0);
+  let playPos = 0;
+
+  const opt = modelSelect.selectedOptions[0];
+  const condDim = parseInt(opt.dataset.cond);
+  const hiddenSize = 40;
+  let hiddenData = new Float32Array(hiddenSize);
+
+  const paramInterval = setInterval(() => {
+    meter.style.width = Math.min(100, (playPos / monoData.length) * 100) + '%';
+  }, 50);
+
+  scriptNode.onaudioprocess = async (e) => {
+    const output = e.outputBuffer.getChannelData(0);
+    const len = output.length;
+
+    if (playPos >= monoData.length) {
+      output.fill(0);
+      return;
+    }
+
+    const curP1 = p1.value / 100;
+    const curP2 = p2.value / 100;
+    const curMix = mixSlider.value / 100;
+    const curGain = Math.pow(10, gainSlider.value / 20);
+
+    const remaining = monoData.length - playPos;
+    const chunkLen = Math.min(len, remaining);
+
+    const inputChunk = new Float32Array(chunkLen);
+    for (let i = 0; i < chunkLen; i++) {
+      inputChunk[i] = monoData[playPos + i] * curGain;
+    }
+
+    if (isBypassed) {
+      for (let i = 0; i < len; i++) output[i] = i < chunkLen ? inputChunk[i] : 0;
+      playPos += chunkLen;
+      return;
+    }
+
+    try {
+      const processed = new Float32Array(chunkLen);
+      let pos = 0;
+
+      while (pos < chunkLen) {
+        const blockLen = Math.min(CHUNK, chunkLen - pos);
+        const paddedBlock = new Float32Array(CHUNK);
+        paddedBlock.set(inputChunk.subarray(pos, pos + blockLen));
+
+        const audioTensor = new ort.Tensor('float32', paddedBlock, [1, CHUNK, 1]);
+        const condData = condDim === 2 ? [curP1, curP2] : [curP1];
+        const condTensor = new ort.Tensor('float32', new Float32Array(condData), [1, condDim]);
+        const hiddenTensor = new ort.Tensor('float32', hiddenData, [1, 1, hiddenSize]);
+
+        const result = await session.run({
+          audio: audioTensor, cond: condTensor, hidden_in: hiddenTensor,
+        });
+
+        const outData = result.output.data;
+        for (let i = 0; i < blockLen; i++) processed[pos + i] = outData[i];
+        hiddenData = new Float32Array(result.hidden_out.data);
+        pos += blockLen;
+      }
+
+      for (let i = 0; i < len; i++) {
+        output[i] = i < chunkLen
+          ? inputChunk[i] * (1 - curMix) + processed[i] * curMix
+          : 0;
+      }
+    } catch (err) {
+      for (let i = 0; i < len; i++) output[i] = i < chunkLen ? inputChunk[i] : 0;
+    }
+
+    playPos += chunkLen;
+  };
+
+  scriptNode.connect(audioCtx.destination);
+  isPlaying = true;
+  playBtn.classList.add('playing');
+  playBtn.textContent = 'Playing...';
+  playBtn.disabled = true;
+  stopBtn.disabled = false;
+  statusEl.textContent = 'Playing — tweak the knobs in real-time!';
+
+  stopFn = () => {
+    scriptNode.disconnect();
+    clearInterval(paramInterval);
+    isPlaying = false;
+    playBtn.classList.remove('playing');
+    playBtn.textContent = 'Play';
+    playBtn.disabled = false;
+    stopBtn.disabled = true;
+    meter.style.width = '0%';
+    stopFn = null;
+    statusEl.textContent = 'Stopped';
+  };
+
+  stopBtn.onclick = () => { if (stopFn) stopFn(); };
+
+  const checkDone = setInterval(() => {
+    if (playPos >= monoData.length) {
+      if (stopFn) stopFn();
+      clearInterval(checkDone);
+      statusEl.textContent = 'Playback complete';
+    }
+  }, 200);
+};
+
+bypassBtn.onclick = () => {
+  isBypassed = !isBypassed;
+  bypassBtn.classList.toggle('active', isBypassed);
+  bypassBtn.textContent = isBypassed ? 'Bypass ON' : 'Bypass';
+};
+
+modelSelect.dispatchEvent(new Event('change'));
+</script>
+</body>
+</html>
