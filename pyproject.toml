@@ -1,0 +1,34 @@
+[project]
+name = "nnstomps"
+version = "0.1.0"
+description = "Neural Drive — AI-powered saturation modeling from plugin profiles"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = [
+    "numpy>=1.26",
+    "soundfile>=0.13",
+    "pedalboard>=0.9",
+]
+
+[project.optional-dependencies]
+clap = ["laion-clap>=1.0", "torch>=2.0"]
+profiling = ["rich>=13.0"]
+training = [
+    "torch>=2.0",
+    "torchaudio>=2.0",
+    "auraloss>=0.4",
+]
+
+[project.scripts]
+nnstomps = "nnstomps.cli.app:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nnstomps"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
