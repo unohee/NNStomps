@@ -1,15 +1,15 @@
 # NNStomps — Neural Drive
 
-GRU 신경망 기반 디스토션/새추레이션 모델링. 오디오 플러그인의 비선형 특성을 프로파일링하고, 신경망으로 학습하여 실시간 오디오 처리.
+GRU neural network based distortion/saturation modeling. Profile any audio plugin's nonlinear characteristics, train a neural network clone, and run it in real-time.
 
 ## What it does
 
 ```
-플러그인 프로파일링 (audioman doctor)
-  → 214종 테스트 신호 × drive 세팅 = input/output 쌍 생성
-  → 조건부 GRU 학습 (drive 값으로 음색 제어)
-  → 실시간 오디오 처리 (5.8ms 레이턴시)
-  → JUCE + RTNeural VST3/AU 빌드 (예정)
+Plugin profiling (audioman doctor)
+  → 214 test signals × drive settings = input/output pairs
+  → Conditional GRU training (drive value controls timbre)
+  → Real-time audio processing (5.8ms latency)
+  → JUCE + RTNeural VST3/AU build (planned)
 ```
 
 ## Architecture
@@ -19,15 +19,15 @@ GRU 신경망 기반 디스토션/새추레이션 모델링. 오디오 플러그
                   │  NNStomps Hybrid Engine      │
                   ├─────────────────────────────┤
 Input Audio ──→   │ [Static]  Waveshaper LUT    │ ──→ Output Audio
-                  │           (다중 레벨 보간)    │
+                  │           (multi-level lerp) │
 Condition   ──→   │ [Dynamic] GRU Residual      │
 (drive, tone)     │           (attack/release)   │
                   └─────────────────────────────┘
 ```
 
-**두 가지 엔진:**
-- **GRU 단독**: 조건부 GRU가 전체 비선형 특성을 학습 (현재 주력)
-- **하이브리드**: Waveshaper LUT (정적) + GRU residual (동적) — 실험 중
+**Two engines:**
+- **GRU standalone**: Conditional GRU learns the full nonlinear transfer (current main approach)
+- **Hybrid**: Waveshaper LUT (static) + GRU residual (dynamic) — experimental
 
 ## Example Model
 
@@ -48,7 +48,7 @@ python scripts/demo.py
 # Blackstar drive_a=70
 python scripts/realtime.py --model blackstar --input 4 --output 8 --p1 70
 
-# 키보드: b=bypass, +/-=mix, p1=80, q=quit
+# Keyboard: b=bypass, +/-=mix, p1=80, q=quit
 ```
 
 ### Python API
@@ -65,33 +65,33 @@ output = process_audio(model, input_audio, cond=[0.8, 0.0])  # drive_a=80
 ### 1. Data Generation
 
 ```bash
-# 214종 테스트 신호 × N 세팅 = input/output 쌍 생성
+# 214 test signals × N settings = input/output pairs
 python scripts/generate_massive_data.py
 ```
 
-테스트 신호 세트:
-- 사인파 11주파수 × 8레벨 = 88개
-- 스윕/노이즈/IMD = 13개
-- AD 임펄스 톤 7주파수 × 4레벨 × 3decay = 84개
-- 벨로시티 스윕, 코드, 다이나믹, 글라이드, 펄스, 삼각/톱니파
+Test signal set:
+- Sine waves: 11 frequencies × 8 levels = 88
+- Sweeps / noise / IMD = 13
+- AD impulse tones: 7 frequencies × 4 levels × 3 decays = 84
+- Velocity sweeps, chords, dynamics, glides, pulses, triangle/sawtooth
 
 ### 2. Model Training
 
 ```bash
-# 단일 플러그인
+# Single plugin
 python scripts/train_blackstar.py
 
-# 전체 플러그인 (학습 + export + eval)
+# All plugins (train + export + eval)
 python scripts/train_all.py --epochs 100
 
-# 이미 학습된 모델 건너뛰기
+# Skip already trained models
 python scripts/train_all.py --skip-trained
 ```
 
-**GRU 모델**: `Input(1 + cond_dim) → GRU(hidden=40) → Dense(1) → Tanh`
-- 5,441 파라미터 (21KB)
-- RTNeural 호환 (VST3 빌드용)
-- 손실: ESR + Multi-STFT + Pre-emphasis (하모닉 강제)
+**GRU model**: `Input(1 + cond_dim) → GRU(hidden=40) → Dense(1) → Tanh`
+- 5,441 parameters (21KB)
+- RTNeural compatible (for VST3 build)
+- Loss: ESR + Multi-STFT + Pre-emphasis (forces harmonic learning)
 
 ### 3. CMA-ES Hyperparameter Optimization
 
@@ -99,7 +99,7 @@ python scripts/train_all.py --skip-trained
 python scripts/cmaes_optimize.py --plugin blackstar --generations 20 --popsize 6
 ```
 
-CMA-ES로 손실 가중치 최적화 → **pre-emphasis(coeff=0.99, w=1.30)가 하모닉 재현의 핵심**임을 발견.
+CMA-ES loss weight optimization revealed that **pre-emphasis (coeff=0.99, w=1.30) is the key to harmonic reproduction**.
 
 ### 4. RTNeural Export
 
@@ -111,7 +111,7 @@ python scripts/train_all.py --export-only
 ## Key Findings
 
 ### Pre-emphasis Loss
-기존 ESR + STFT 손실만으로는 하모닉(배음)을 학습하지 못함. **Pre-emphasis 필터**(y[n] = x[n] - 0.99·x[n-1])를 적용한 ESR이 고주파 하모닉 학습을 강제:
+Standard ESR + STFT loss alone cannot learn harmonics (overtones). Applying a **pre-emphasis filter** (y[n] = x[n] - 0.99·x[n-1]) to the ESR forces high-frequency harmonic learning:
 
 | Loss Config | H2 diff | H3 diff | H5 diff |
 |-------------|---------|---------|---------|
@@ -119,7 +119,7 @@ python scripts/train_all.py --export-only
 | ESR 0.48, STFT 1.11, **PreEmph 1.30** | **+0.6 dB** | **-1.4 dB** | **-2.8 dB** |
 
 ### Waveshaper v2
-기존 waveshaper 캡처가 입력 범위의 10%만 커버하는 버그 발견 → `measure_waveshaper_v2()`로 다중 진폭 레벨 + 복수 주기 평균 + 256포인트 리샘플링으로 해결.
+Discovered that the original waveshaper capture only covered 10% of the input range → fixed with `measure_waveshaper_v2()`: multi-amplitude levels + multi-cycle averaging + 256-point resampling.
 
 ## Project Structure
 
@@ -127,43 +127,43 @@ python scripts/train_all.py --export-only
 NNStomps/
 ├── src/nnstomps/
 │   ├── core/
-│   │   ├── neural_drive.py      # CLAP 검색 + waveshaper 보간 엔진
-│   │   ├── hybrid_drive.py      # Waveshaper LUT + GRU 하이브리드
-│   │   ├── plugin_analysis.py   # 플러그인 분석 (THD, waveshaper v2)
-│   │   ├── test_signal.py       # 기본 테스트 신호 (사인, 스윕)
-│   │   ├── test_signal_v2.py    # AD 엔벨로프 기반 신호 (임펄스 톤, 벨로시티)
-│   │   ├── vst3_wrapper.py      # pedalboard VST3 래퍼
-│   │   ├── audio_file.py        # 오디오 I/O
-│   │   ├── analysis.py          # 프레임 메트릭 (RMS, spectral)
-│   │   └── parameter.py         # 파라미터 dataclass
+│   │   ├── neural_drive.py      # CLAP search + waveshaper interpolation engine
+│   │   ├── hybrid_drive.py      # Waveshaper LUT + GRU hybrid
+│   │   ├── plugin_analysis.py   # Plugin analysis (THD, waveshaper v2)
+│   │   ├── test_signal.py       # Basic test signals (sine, sweep)
+│   │   ├── test_signal_v2.py    # AD envelope signals (impulse tones, velocity)
+│   │   ├── vst3_wrapper.py      # pedalboard VST3 wrapper
+│   │   ├── audio_file.py        # Audio I/O
+│   │   ├── analysis.py          # Frame metrics (RMS, spectral)
+│   │   └── parameter.py         # Parameter dataclass
 │   ├── training/
 │   │   ├── model.py             # NNStompGRU, NNStompGRU2
 │   │   ├── losses.py            # ESR, MultiSTFT, PreEmphasis, DC
-│   │   ├── dataset.py           # AudioPairDataset (메모리 프리로드)
-│   │   ├── train.py             # 학습 루프 (TBPTT, AMP, curriculum)
+│   │   ├── dataset.py           # AudioPairDataset (memory preload)
+│   │   ├── train.py             # Training loop (TBPTT, AMP, curriculum)
 │   │   ├── export.py            # PyTorch → RTNeural JSON
-│   │   ├── evaluate.py          # A/B 비교, ESR 계산
-│   │   ├── generate_pairs.py    # input/output 쌍 생성
-│   │   ├── cmaes_sound_match.py # CMA-ES render-in-the-loop 매칭
-│   │   └── presets.py           # CLAP 기반 프리셋 생성 (예정)
+│   │   ├── evaluate.py          # A/B comparison, ESR calculation
+│   │   ├── generate_pairs.py    # Input/output pair generation
+│   │   ├── cmaes_sound_match.py # CMA-ES render-in-the-loop matching
+│   │   └── presets.py           # CLAP-based preset generation (planned)
 │   └── cli/app.py               # CLI (search, process, info)
 ├── scripts/
 │   ├── demo.py                  # Gradio UI (localhost:7870)
-│   ├── realtime.py              # 실시간 오디오 처리
-│   ├── train_blackstar.py       # Blackstar 학습 스크립트 (예제)
-│   ├── train_all.py             # 전체 플러그인 학습 + eval + export
-│   └── cmaes_optimize.py        # CMA-ES 하이퍼파라미터 최적화
-├── models/                      # 학습된 모델 (.pt, .json)
-├── data/                        # 플러그인 프로파일 데이터
-├── training_data/               # input/output 오디오 쌍
-└── audio_demos/                 # 렌더링된 비교 오디오
+│   ├── realtime.py              # Real-time audio processing
+│   ├── train_blackstar.py       # Blackstar training script (example)
+│   ├── train_all.py             # Full pipeline: train + eval + export
+│   └── cmaes_optimize.py        # CMA-ES hyperparameter optimization
+├── models/                      # Trained models (.pt, .json)
+├── data/                        # Plugin profile data
+├── training_data/               # Input/output audio pairs
+└── audio_demos/                 # Rendered comparison audio
 ```
 
 ## Data Format
 
 Each plugin directory (`data/{plugin}/`) contains:
 - `*_clap.npy` — (N, 512) CLAP audio embeddings
-- `*_clap_labels.json` — parameter labels
+- `*_clap_labels.json` — Parameter labels
 - `profile.json` — THD%, odd/even ratio, harmonic spectrum, waveshaper I/O
 - `waveshaper_curves.npy` — (N, 64) v1 transfer functions
 - `waveshaper_curves_v2.npy` — (N, 256) v2 transfer functions (multi-level)
@@ -181,9 +181,9 @@ pip install -e ".[training]"  # torch, torchaudio, auraloss
 
 ## Next Steps
 
-1. **하이브리드 엔진 완성** — Waveshaper LUT + GRU residual 통합
-2. **JUCE + RTNeural VST3/AU 빌드** — RTNeural JSON 이미 내보내기 완료
-3. **프리셋 시스템** — CLAP 기반 자동 태깅 + 프리셋 매니저
+1. **Hybrid engine** — Integrate Waveshaper LUT + GRU residual
+2. **JUCE + RTNeural VST3/AU build** — RTNeural JSON export already done
+3. **Preset system** — CLAP-based auto-tagging + preset manager
 
 ## License
 
