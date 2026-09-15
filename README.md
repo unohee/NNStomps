@@ -12,6 +12,8 @@ Plugin profiling (audioman doctor)
   → JUCE + RTNeural VST3/AU build (planned)
 ```
 
+A second engine models **equalizers** rather than saturation — see [Neural EQ](#neural-eq).
+
 ## Architecture
 
 ```
@@ -29,11 +31,31 @@ Condition   ──→   │ [Dynamic] GRU Residual      │
 - **GRU standalone**: Conditional GRU learns the full nonlinear transfer (current main approach)
 - **Hybrid**: Waveshaper LUT (static) + GRU residual (dynamic) — experimental
 
+## What is in this repository
+
+This is the code, plus one worked example. Profiled data and trained models for every
+other plugin are **not** tracked:
+
+| Path | Tracked | Why |
+|------|---------|-----|
+| `src/`, `scripts/`, `tests/` | yes | the code |
+| `data/blackstar/` | yes | example profile, plugin name anonymized |
+| `data/<other>/` | no | a profile captures one specific commercial plugin |
+| `models/` | no | trained artifacts; reproduce by training |
+| `training_data/` | no | rendered audio pairs (large `.wav`) |
+| `scripts/local/` | no | profiling scripts that embed plugin paths and names |
+
+So the quick-start commands below need a model you have trained yourself. Nothing here
+ships a ready-to-use one.
+
 ## Example Model
 
-An example model (`blackstar`) is included — a dual-drive tube saturation profile with 2D conditioning (drive_a, drive_b).
+The `blackstar` profile under `data/blackstar/` is a dual-drive tube saturation with 2D
+conditioning (drive_a, drive_b). Its plugin name and path are anonymized.
 
 ## Quick Start
+
+Train first — the quick-start scripts load from `models/`:
 
 ### Gradio Demo
 
@@ -56,6 +78,7 @@ python scripts/realtime.py --model blackstar --input 4 --output 8 --p1 70
 ```python
 from nnstomps.training.evaluate import load_model, process_audio
 
+# Requires a model trained locally — models/ is not tracked.
 model, config = load_model("models/blackstar/best_model.pt")
 output = process_audio(model, input_audio, cond=[0.8, 0.0])  # drive_a=80
 ```
@@ -66,10 +89,10 @@ output = process_audio(model, input_audio, cond=[0.8, 0.0])  # drive_a=80
 
 ```bash
 # 214 test signals × N settings = input/output pairs
-python 
+python scripts/local/generate_massive_data.py
 ```
 
-Test signal set:
+The signal set (`core/test_signal_v2.py`):
 - Sine waves: 11 frequencies × 8 levels = 88
 - Sweeps / noise / IMD = 13
 - AD impulse tones: 7 frequencies × 4 levels × 3 decays = 84
@@ -78,20 +101,15 @@ Test signal set:
 ### 2. Model Training
 
 ```bash
-# Single plugin
-python scripts/train_blackstar.py
-
-# All plugins (train + export + eval)
-python scripts/train_all.py --epochs 100
-
-# Skip already trained models
+python scripts/train_blackstar.py            # single plugin
+python scripts/train_all.py --epochs 100     # train + export + eval
 python scripts/train_all.py --skip-trained
 ```
 
 **GRU model**: `Input(1 + cond_dim) → GRU(hidden=40) → Dense(1) → Tanh`
 - 5,441 parameters (21KB)
-- RTNeural compatible (for VST3 build)
-- Loss: ESR + Multi-STFT + Pre-emphasis (forces harmonic learning)
+- RTNeural compatible (for the VST3 build)
+- Loss: ESR + Multi-STFT + Pre-emphasis
 
 ### 3. CMA-ES Hyperparameter Optimization
 
@@ -107,6 +125,44 @@ CMA-ES loss weight optimization revealed that **pre-emphasis (coeff=0.99, w=1.30
 python scripts/train_all.py --export-only
 # → models/{plugin}/{plugin}_rtneural.json
 ```
+
+## Neural EQ
+
+A separate engine for equalizers. An MLP maps EQ parameters to FIR coefficients, which
+are convolved with the audio through overlap-add FFT convolution. Rather than learning a
+waveform, it learns the frequency response.
+
+```
+parameters → MLP → FIR coefficients → overlap-add convolution → audio
+```
+
+Training fits the predicted response to a profiled magnitude and phase curve:
+
+```bash
+python scripts/local/train_eq_all.py
+```
+
+Running it:
+
+```python
+from nnstomps.core.neural_eq import NeuralEQEngine
+
+engine = NeuralEQEngine("models/channel_eq/best_model.pt", block_size=256, crossfade_blocks=8)
+engine.set_params({"lf_gain": 3.0, "lmf_gain": 0.0, "hmf_gain": -2.0, "hf_gain": 6.0})
+
+output = engine.process_block(block)   # exactly block_size samples
+```
+
+Parameters are given in **natural units** (dB), keyed by name. The engine normalizes them
+for the model using the `param_spec` stored in the checkpoint, so the encoding used at
+training time and at run time cannot drift apart. A checkpoint without a spec is rejected
+rather than guessed at.
+
+`set_params` crossfades between the old and new filter over `crossfade_blocks` blocks;
+`crossfade_blocks=0` switches instantly, which clicks on a large jump.
+
+Profiled EQ plugins are trained under the same pseudonyms as their model directories
+(`bronze_eq`, `midrange_eq`, `channel_eq`, `passive_eq`, `precision_eq`).
 
 ## Key Findings
 
@@ -129,6 +185,7 @@ NNStomps/
 │   ├── core/
 │   │   ├── neural_drive.py      # CLAP search + waveshaper interpolation engine
 │   │   ├── hybrid_drive.py      # Waveshaper LUT + GRU hybrid
+│   │   ├── neural_eq.py         # MLP → FIR realtime EQ engine
 │   │   ├── plugin_analysis.py   # Plugin analysis (THD, waveshaper v2)
 │   │   ├── test_signal.py       # Basic test signals (sine, sweep)
 │   │   ├── test_signal_v2.py    # AD envelope signals (impulse tones, velocity)
@@ -145,39 +202,56 @@ NNStomps/
 │   │   ├── evaluate.py          # A/B comparison, ESR calculation
 │   │   ├── generate_pairs.py    # Input/output pair generation
 │   │   ├── cmaes_sound_match.py # CMA-ES render-in-the-loop matching
-│   │   └── presets.py           # CLAP-based preset generation (planned)
+│   │   ├── eq_model.py          # NNStompEQ — parameters → FIR
+│   │   ├── eq_dataset.py        # EQ profile dataset + parameter encoding
+│   │   ├── eq_losses.py         # Magnitude / phase / compactness losses
+│   │   ├── train_eq.py          # EQ training loop
+│   │   └── export_eq.py         # EQ → ONNX + web UI metadata
 │   └── cli/app.py               # CLI (search, process, info)
-├── scripts/
+├── scripts/                     # public — runnable from a clone
 │   ├── demo.py                  # Gradio UI (localhost:7870)
 │   ├── realtime.py              # Real-time audio processing
 │   ├── train_blackstar.py       # Blackstar training script (example)
 │   ├── train_all.py             # Full pipeline: train + eval + export
-│   └── cmaes_optimize.py        # CMA-ES hyperparameter optimization
-├── models/                      # Trained models (.pt, .json)
-├── data/                        # Plugin profile data
-├── training_data/               # Input/output audio pairs
-└── audio_demos/                 # Rendered comparison audio
+│   ├── cmaes_optimize.py        # CMA-ES hyperparameter optimization
+│   └── local/                   # NOT tracked — profiling scripts with plugin paths
+├── tests/                       # pytest
+│   ├── test_neural_eq.py        # overlap-add equivalence, crossfade, state reset
+│   ├── test_eq_dataset.py       # parameter encoding, split-then-augment
+│   ├── test_eq_losses.py        # dB scale, phase wrapping, resampling
+│   ├── test_eq_model.py         # shape and parameter-count contract
+│   └── test_eq_pipeline.py      # export and training guards
+├── models/                      # NOT tracked
+├── data/                        # example profile only
+└── training_data/               # NOT tracked
 ```
 
 ## Data Format
 
 Each plugin directory (`data/{plugin}/`) contains:
 - `*_clap.npy` — (N, 512) CLAP audio embeddings
-- `*_clap_labels.json` — Parameter labels
+- `*_clap_labels.json` — parameter labels
 - `profile.json` — THD%, odd/even ratio, harmonic spectrum, waveshaper I/O
 - `waveshaper_curves.npy` — (N, 64) v1 transfer functions
 - `waveshaper_curves_v2.npy` — (N, 256) v2 transfer functions (multi-level)
+
+EQ profiles add:
+- `settings_dense.json` — parameter sets, one row per measurement
+- `freq_response_dense.npy`, `phase_response_dense.npy` — responses, row-aligned with
+  `settings_dense.json`
 
 ## Requirements
 
 - Python 3.12+
 - numpy, soundfile, pedalboard
 - torch >= 2.0 (training)
-- Optional: laion-clap (text search), sounddevice (realtime), gradio (demo)
 
 ```bash
-pip install -e ".[training]"  # torch, torchaudio, auraloss
+pip install -e ".[training]"   # torch, torchaudio, onnx
+pytest                          # requires the training extra
 ```
+
+Optional: `laion-clap` (text search), `sounddevice` (realtime), `gradio` (demo).
 
 ## Next Steps
 

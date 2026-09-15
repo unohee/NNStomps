@@ -1,61 +1,93 @@
 # Changelog
 
-## [Unreleased] — 2026-03-26
+## [Unreleased] — 2026-09-15
 
-### Added — GRU 학습 파이프라인
-- `src/nnstomps/training/` 모듈 전체 신규
-  - `model.py` — NNStompGRU (5,441 params), NNStompGRU2 (9,141 params)
-  - `losses.py` — ESR, MultiScaleSTFT, PreEmphasisLoss, DCLoss, NNStompLoss
-  - `dataset.py` — AudioPairDataset (메모리 프리로드 지원)
-  - `train.py` — 학습 루프 (TBPTT, curriculum, AMP, CosineAnnealing)
-  - `export.py` — PyTorch → RTNeural JSON 변환 + 검증
-  - `evaluate.py` — A/B 비교, ESR 계산, 오디오 렌더링
-  - `generate_pairs.py` — input/output 쌍 생성 파이프라인
-  - `cmaes_sound_match.py` — CMA-ES render-in-the-loop 사운드 매칭
+### Added — Neural EQ
+- `src/nnstomps/core/neural_eq.py` — `NeuralEQEngine`: MLP-generated FIR coefficients
+  with overlap-add FFT convolution, per-sample crossfade on parameter changes, and a
+  `reset()` for stream reuse
+- `src/nnstomps/training/eq_model.py` — `NNStompEQ`: conditional MLP, parameters → FIR
+- `src/nnstomps/training/eq_dataset.py` — `EQProfileDataset` plus `encode_params()`, the
+  single definition of the parameter encoding shared by training and the realtime engine
+- `src/nnstomps/training/eq_losses.py` — magnitude, phase, and FIR-compactness losses
+- `src/nnstomps/training/train_eq.py` — EQ training loop
+- `src/nnstomps/training/export_eq.py` — ONNX export plus web UI metadata
 
-### Added — 테스트 신호 v2
-- `src/nnstomps/core/test_signal_v2.py` — AD 엔벨로프 기반 테스트 신호
-  - `generate_impulse_tone()` — 볼륨별 비선형 반응 캡처
-  - `generate_multi_tone_burst()` — 주파수별 새추레이션 측정
-  - `generate_velocity_sweep()` — pp→ff 레벨 의존적 특성
-  - `generate_chord_burst()` — IMD 상호변조 캡처
-  - `generate_full_test_suite()` — 214종 전체 세트
-
-### Added — 하이브리드 엔진
-- `src/nnstomps/core/hybrid_drive.py` — Waveshaper LUT + GRU Residual
-  - `WaveshaperLUT` — 다중 레벨 전달함수, 입력 진폭별 보간
-  - `HybridDrive` — 정적 LUT + 동적 GRU 결합
-
-### Added — 스크립트
-- `scripts/demo.py` — Gradio UI (localhost:7870)
-- `scripts/realtime.py` — sounddevice 실시간 오디오 처리
-- `scripts/train_blackstar.py` — Blackstar 학습 (예제)
-- `scripts/train_all.py` — 전체 플러그인 학습 + export + eval
-- `scripts/cmaes_optimize.py` — CMA-ES 하이퍼파라미터 최적화
-- `` — 대규모 학습 데이터 생성 (214종 × 12세팅)
-- `` — waveshaper v2 재프로파일링
-
-### Added — 학습된 모델
-- `models/blackstar/` — Blackstar 예제 모델 (dual-drive tube saturation)
+### Added — tests
+- `tests/` goes from empty to 42 tests. Covers overlap-add equivalence against a direct
+  convolution, crossfade smoothing, stream reset, input validation, the parameter
+  encoding contract, loss behaviour, and the export/training guards.
 
 ### Changed
-- `plugin_analysis.py` — import 오류 수정 (`vst3` → `vst3_wrapper`)
-- `plugin_analysis.py` — `WaveshaperV2Result` + `measure_waveshaper_v2()` 추가
-- `pyproject.toml` — `[project.optional-dependencies].training` 추가
+- Parameter encoding has one definition. `encode_params()` raises on a missing key, an
+  unknown categorical value, or a non-finite value — the previous `dict.get(key, 0)`
+  encoded a missing key into a plausible-looking value and trained on it silently.
+- `NeuralEQEngine` takes parameters in natural units and normalizes internally, using a
+  `param_spec` stored in the checkpoint. The previous contract asked callers for
+  normalized inputs while the exported metadata advertised natural-unit ranges; the same
+  setting produced two different filters with no error.
+- Validation split is taken before augmentation, so interpolated samples can no longer
+  straddle the train/validation boundary.
+- Frequency-response resampling interpolates the complex response with
+  `align_corners=True`. Interpolating wrapped angles corrupted bins near the ±180 branch
+  cut, and the bin-to-frequency mapping was half a bin off.
+- EQ plugin identifiers use pseudonyms, matching the model directory names.
 
 ### Fixed
-- waveshaper 캡처 범위 버그: 입력의 10%만 캡처 → v2로 99.9% 커버
-- audioman doctor `--mode waveshaper` v2 기본 적용 (audioman 코드베이스 수정)
+- `export_eq` raises on a `plugin_name` absent from `EQ_PLUGIN_CONFIGS` instead of
+  emitting an empty control set, which rendered a UI with no sliders and wrote the
+  unknown name into the published metadata.
+- `process_block` rejects block lengths other than `block_size`; other lengths aliased
+  and desynchronised the stream silently.
+- `train_eq` rejects `epochs <= 0` instead of saving a checkpoint with
+  `model_state: None` and reporting success.
+
+### Removed
+- `fir_target` and `_freq_response_to_fir()` — unused, and the window placement delayed
+  the response by `fir_len // 2` samples. Removing them also removed the `scipy`
+  dependency.
+
+### Infrastructure
+- Local-only scripts moved to `scripts/local/`, excluded by directory. The previous
+  `.gitignore` listed files by name, which needed a manual edit for every new script and
+  put the plugin names in the committed file.
+- `onnx` declared in the `training` extra (required by `export_eq`); `auraloss` dropped
+  (never imported).
+- Repository history rewritten, and `gh-pages` rebuilt as a single commit, to remove
+  commercial plugin names that had been published.
+
+## [0.1.0] — 2026-03-26
+
+### Added — GRU training pipeline
+- `src/nnstomps/training/` — `model.py` (NNStompGRU 5,441 params, NNStompGRU2 9,141),
+  `losses.py` (ESR, MultiScaleSTFT, PreEmphasisLoss, DCLoss, NNStompLoss), `dataset.py`
+  (memory preload), `train.py` (TBPTT, curriculum, AMP, CosineAnnealing), `export.py`
+  (PyTorch → RTNeural JSON with verification), `evaluate.py` (A/B comparison, ESR),
+  `generate_pairs.py`, `cmaes_sound_match.py`
+- `src/nnstomps/core/test_signal_v2.py` — AD envelope test signals: impulse tones,
+  multi-tone bursts, velocity sweeps, chord bursts, and the 214-signal full suite
+- `src/nnstomps/core/hybrid_drive.py` — `WaveshaperLUT` (multi-level transfer functions)
+  and `HybridDrive` (static LUT + dynamic GRU residual)
+- Scripts: `demo.py` (Gradio UI on :7870), `realtime.py`, `train_blackstar.py`,
+  `train_all.py`, `cmaes_optimize.py`
+- `models/blackstar/` — example model (dual-drive tube saturation)
+
+### Added — initial engine
+- `NeuralDrive` (from_data_dir, search, process, process_by_text)
+- CLI (search, process, info)
+- Plugin profiling data: CLAP embeddings, waveshaper curves
+
+### Changed
+- `plugin_analysis.py` — fixed an import (`vst3` → `vst3_wrapper`); added
+  `WaveshaperV2Result` and `measure_waveshaper_v2()`
+- `pyproject.toml` — added the `training` optional-dependency group
+
+### Fixed
+- Waveshaper capture covered only 10% of the input range; v2 reaches 99.9%
 
 ### Discovered
-- **Pre-emphasis Loss**: ESR+STFT만으로는 하모닉 학습 불가. `PreEmphasisLoss(coeff=0.99)`가 핵심
-- **파라미터 이름 검증 중요**: 플러그인 실제 파라미터명과 코드 내 이름 불일치 주의
-- **CMA-ES 최적 가중치**: w_esr=0.48, w_stft=1.11, w_preemph=1.30
-
-## [0.1.0] — 2026-03-25
-
-### Added
-- 초기 NNStomps — CLAP 검색 + waveshaper 보간 엔진
-- 플러그인 프로파일링 데이터 (CLAP 임베딩, waveshaper 곡선)
-- `NeuralDrive` 클래스 (from_data_dir, search, process, process_by_text)
-- CLI (search, process, info)
+- **Pre-emphasis loss**: ESR + STFT alone cannot learn harmonics.
+  `PreEmphasisLoss(coeff=0.99)` is what forces it
+- **Parameter names matter**: a mismatch between the plugin's real parameter names and
+  the names in code fails quietly
+- **CMA-ES optimum**: w_esr=0.48, w_stft=1.11, w_preemph=1.30
