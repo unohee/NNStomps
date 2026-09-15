@@ -57,6 +57,17 @@ def export_eq_to_onnx(
     logger.info(f"ONNX: {output_path} ({size_kb:.1f} KB)")
 
     spec = cfg.get("param_spec") or param_spec_for(plugin_name)
+    expected_spec = param_spec_for(plugin_name)
+    if spec != expected_spec:
+        # The controls come from the config table while the engine normalizes
+        # against the checkpoint's spec. Letting them differ publishes metadata
+        # where the sliders and the normalization describe two different
+        # parameter sets.
+        raise ValueError(
+            f"checkpoint param_spec does not match the {plugin_name!r} contract; "
+            f"re-export or re-inject the spec"
+        )
+
     metadata = {
         "plugin_name": plugin_name,
         "cond_dim": cfg["cond_dim"],

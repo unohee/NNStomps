@@ -19,14 +19,29 @@ class NeuralEQEngine:
     with no error — which is why the natural-unit contract is enforced here
     rather than documented and hoped for.
 
+    A parameter change is crossfaded rather than switched. The fade is a blend
+    of two convolution streams, and `set_params` may arrive again while one is
+    still running (a slider drag does exactly that). To keep the state coherent
+    across re-entry, the in-flight fade is *collapsed* first: the two streams
+    are folded into a single filter and a single overlap state, so there is
+    never a filter paired with another filter's tail.
+
     Args:
         model_path: best_model.pt path
         block_size: audio block size in samples
         crossfade_blocks: blocks over which a parameter change is blended in.
             0 replaces the filter instantly, which clicks on large jumps.
+        sample_rate: only used to label the frequency axis of
+            get_frequency_response(); it does not affect processing.
     """
 
-    def __init__(self, model_path: str, block_size: int = 256, crossfade_blocks: int = 8):
+    def __init__(
+        self,
+        model_path: str,
+        block_size: int = 256,
+        crossfade_blocks: int = 8,
+        sample_rate: float = 44100.0,
+    ):
         from nnstomps.training.eq_dataset import encode_param_vector
         from nnstomps.training.eq_model import NNStompEQ
 
@@ -47,6 +62,7 @@ class NeuralEQEngine:
         self.fir_len = cfg["fir_len"]
         self.block_size = block_size
         self.crossfade_blocks = max(0, int(crossfade_blocks))
+        self.sample_rate = float(sample_rate)
 
         self.model = NNStompEQ(cfg["cond_dim"], cfg["fir_len"], cfg.get("hidden_dims"))
         self.model.load_state_dict(ckpt["model_state"])
@@ -66,14 +82,52 @@ class NeuralEQEngine:
         of the previous stream (up to fir_len - 1 samples) would be convolved
         into the head of the next one.
         """
-        self._current_fir = np.zeros(self.fir_len, dtype=np.float32)
-        self._current_fir[0] = 1.0  # identity (pass-through) filter
-        self._current_H = np.fft.rfft(self._current_fir, n=self.fft_len)
+        identity = np.zeros(self.fir_len, dtype=np.float32)
+        identity[0] = 1.0
 
+        # The stream that is currently sounding. During a fade this is the
+        # incoming filter; `_prev_fir` is the one being faded out.
+        self._current_fir = identity
+        self._current_H = np.fft.rfft(identity, n=self.fft_len)
         self._overlap = np.zeros(self.fft_len, dtype=np.float32)
 
-        self._prev_H = None
+        self._prev_fir = None
         self._overlap_prev = np.zeros(self.fft_len, dtype=np.float32)
+        self._fade_done = 0
+        self._xfade_remaining = 0
+
+    def _raised_cosine(self, t: np.ndarray | float):
+        """Equal-gain fade curve on [0, 1]."""
+        return 0.5 - 0.5 * np.cos(np.pi * np.clip(t, 0.0, 1.0))
+
+    def _collapse(self) -> None:
+        """Fold an in-flight fade into one filter and one overlap state.
+
+        The output during a fade is (1-a)*stream_prev + a*stream_cur, and at a
+        frozen `a` that equals convolving with the blended filter. Collapsing at
+        the alpha already reached therefore reproduces the sounding signal
+        exactly, leaving a single coherent stream to fade out of.
+
+        Runs before every new fade. When no fade is in flight it is a no-op, and
+        when one just started (`_fade_done == 0`) alpha is 0, so the outgoing
+        filter is correctly the previous one — no samples of the new filter have
+        been heard yet.
+        """
+        if self._prev_fir is None or self._xfade_remaining <= 0:
+            self._prev_fir = None
+            self._xfade_remaining = 0
+            return
+
+        a = self._raised_cosine(self._fade_done / self.crossfade_blocks)
+        self._current_fir = (
+            (1.0 - a) * self._prev_fir + a * self._current_fir
+        ).astype(np.float32)
+        self._current_H = np.fft.rfft(self._current_fir, n=self.fft_len)
+        self._overlap = (
+            (1.0 - a) * self._overlap_prev + a * self._overlap
+        ).astype(np.float32)
+
+        self._prev_fir = None
         self._xfade_remaining = 0
 
     def set_params(self, values: dict) -> None:
@@ -90,9 +144,14 @@ class NeuralEQEngine:
             fir = self.model(torch.from_numpy(vec)[None, :])[0].numpy().astype(np.float32)
 
         if self.crossfade_blocks > 0:
-            self._prev_H = self._current_H
+            self._collapse()
+            self._prev_fir = self._current_fir
             self._overlap_prev = self._overlap.copy()
+            self._fade_done = 0
             self._xfade_remaining = self.crossfade_blocks
+        else:
+            self._prev_fir = None
+            self._xfade_remaining = 0
 
         self._current_fir = fir
         self._current_H = np.fft.rfft(fir, n=self.fft_len)
@@ -126,22 +185,24 @@ class NeuralEQEngine:
                 f"stream instead of raising."
             )
 
-        out, self._overlap = self._convolve_block(audio, self._current_H, self._overlap)
-
-        if self._xfade_remaining > 0:
-            # Blending the two filter outputs sample-by-sample is equivalent to
-            # blending the coefficients (convolution is linear), but doing it on
-            # the outputs lets the ramp be per-sample instead of per-block.
-            old, self._overlap_prev = self._convolve_block(
-                audio, self._prev_H, self._overlap_prev
+        if self._prev_fir is not None and self._xfade_remaining > 0:
+            out_prev, self._overlap_prev = self._convolve_block(
+                audio, np.fft.rfft(self._prev_fir, n=self.fft_len), self._overlap_prev
             )
-            done = self.crossfade_blocks - self._xfade_remaining
-            pos = (done + np.arange(self.block_size, dtype=np.float32) / self.block_size)
-            a = pos / self.crossfade_blocks
-            a = (0.5 - 0.5 * np.cos(np.pi * a)).astype(np.float32)  # raised cosine
-            out = (1.0 - a) * old + a * out
-            self._xfade_remaining -= 1
+            out_cur, self._overlap = self._convolve_block(
+                audio, self._current_H, self._overlap
+            )
 
+            done = self._fade_done
+            pos = (done + np.arange(self.block_size, dtype=np.float32) / self.block_size)
+            a = self._raised_cosine(pos / self.crossfade_blocks).astype(np.float32)
+
+            out = (1.0 - a) * out_prev + a * out_cur
+            self._fade_done += 1
+            self._xfade_remaining -= 1
+            return out
+
+        out, self._overlap = self._convolve_block(audio, self._current_H, self._overlap)
         return out
 
     def get_frequency_response(self, n_fft: int = 32768) -> tuple[np.ndarray, np.ndarray]:
@@ -153,5 +214,5 @@ class NeuralEQEngine:
         """
         H = np.fft.rfft(self._current_fir, n=n_fft)
         mag_db = 20 * np.log10(np.abs(H) + 1e-10)
-        freqs = np.fft.rfftfreq(n_fft, 1 / 44100)
+        freqs = np.fft.rfftfreq(n_fft, 1 / self.sample_rate)
         return freqs, mag_db

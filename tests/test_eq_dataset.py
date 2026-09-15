@@ -155,6 +155,33 @@ def test_base_indices_select_an_exact_subset(tmp_path):
         EQProfileDataset(str(d), "channel_eq", base_indices=[n])
 
 
+def test_augmentation_interpolates_phase_along_the_short_arc(tmp_path):
+    """Phase blending must hug the +-180 branch cut, not cross it.
+
+    Two rows at +179 and -179 degrees are the same physical phase modulo 360.
+    Linear blending would put the midpoint at 0 degrees — a target no real
+    response has — poisoning a few percent of augmented rows. The blend must
+    stay near +-180, i.e. on the short arc.
+    """
+    d = tmp_path / "channel_eq"
+    d.mkdir()
+    (d / "settings_dense.json").write_text(json.dumps([
+        {"lf_gain": 0.0, "lmf_gain": 0.0, "hmf_gain": 0.0, "hf_gain": 0.0},
+        {"lf_gain": 12.0, "lmf_gain": 0.0, "hmf_gain": 0.0, "hf_gain": 0.0},
+    ]))
+    np.save(d / "freq_response_dense.npy", np.zeros((2, 8), dtype=np.float32))
+    phases = np.zeros((2, 8), dtype=np.float32)
+    phases[0, 0] = 179.0
+    phases[1, 0] = -179.0
+    np.save(d / "phase_response_dense.npy", phases)
+
+    ds = EQProfileDataset(str(d), "channel_eq", augment_factor=4)
+
+    # Every row's bin 0 must sit near +-180 — never near 0.
+    for col in ds.phase_deg[:, 0]:
+        assert abs(col) > 170.0, f"augmented phase {col:.1f} crosses the branch cut"
+
+
 def test_augmentation_stays_within_the_given_subset(tmp_path):
     """Augmented rows must interpolate only between rows handed to the split.
 

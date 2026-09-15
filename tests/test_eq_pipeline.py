@@ -54,6 +54,21 @@ def test_export_rejects_an_unknown_plugin_name(tmp_path):
         export_eq_to_onnx(ckpt, str(tmp_path / "m.onnx"))
 
 
+def test_export_rejects_a_spec_that_contradicts_the_contract(tmp_path):
+    """The controls come from the config table and the engine normalizes against
+    the checkpoint's spec. If a checkpoint carries another plugin's spec, the
+    published metadata describes two different parameter sets — refuse."""
+    from nnstomps.training.eq_dataset import param_spec_for
+
+    ckpt = _checkpoint(tmp_path)
+    blob = torch.load(ckpt, map_location="cpu", weights_only=True)
+    blob["config"]["param_spec"] = param_spec_for("passive_eq")
+    torch.save(blob, ckpt)
+
+    with pytest.raises(ValueError, match="does not match"):
+        export_eq_to_onnx(ckpt, str(tmp_path / "m.onnx"))
+
+
 def test_controls_cover_every_declared_parameter():
     for plugin_name, cfg in EQ_PLUGIN_CONFIGS.items():
         controls = _build_controls_metadata(plugin_name)

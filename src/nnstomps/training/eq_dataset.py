@@ -138,6 +138,16 @@ def encode_params(rows: list[dict], spec: dict) -> np.ndarray:
                 val = float(row[p])
                 if not np.isfinite(val):
                     raise ValueError(f"row {i}: {p!r}={val!r} is not finite")
+                if val < lo or val > hi:
+                    # Out of range means the caller is using a different unit or
+                    # a preset outside the profiled sweep. Extrapolating would
+                    # feed the model a value far outside its training
+                    # distribution with no error, which is the same class of
+                    # silent corruption the checks above exist to prevent.
+                    raise ValueError(
+                        f"row {i}: {p!r}={val} is outside the profiled range "
+                        f"[{lo}, {hi}]"
+                    )
                 out[i, col] = (val - lo) / (hi - lo)
                 col += 1
 
@@ -241,10 +251,18 @@ class EQProfileDataset(Dataset):
 
         self.params = np.concatenate([self.params, blend(self.params[i], self.params[j])])
         self.mag_db = np.concatenate([self.mag_db, blend(self.mag_db[i], self.mag_db[j])])
-        self.phase_deg = np.concatenate([
-            self.phase_deg,
-            blend(self.phase_deg[i], self.phase_deg[j]),
-        ])
+
+        # Phase needs care: the stored value is wrapped into (-180, 180], so two
+        # adjacent rows can sit on opposite sides of the branch cut (one at
+        # +179, one at -179). Linear blending would interpolate across the cut
+        # and produce a target that no physical response has — for passive_eq
+        # that affected 7% of augmented rows. Blend along the shortest arc
+        # instead, then re-wrap.
+        pi, pj = self.phase_deg[i], self.phase_deg[j]
+        delta = (pj - pi + 180.0) % 360.0 - 180.0
+        blended = pi + alpha * delta
+        blended = (blended + 180.0) % 360.0 - 180.0
+        self.phase_deg = np.concatenate([self.phase_deg, blended.astype(np.float32)])
 
     def __len__(self) -> int:
         return len(self.params)
