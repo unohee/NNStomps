@@ -8,27 +8,26 @@ dist/
 *.wav
 .DS_Store
 
-# 학습된 모델 (예제 blackstar만 트래킹)
+# 학습된 모델 (예제만 트래킹)
 models/
-!models/.gitkeep
 
 # 학습 데이터
 training_data/
 audio_demos/
 
-# 플러그인 프로파일 데이터 (예제 blackstar만 트래킹)
+# 플러그인 프로파일 데이터 (예제만 트래킹)
 data/*
 !data/blackstar/
 
-# 로컬 전용 스크립트 (상용 플러그인 경로 포함)
+# 로컬 전용 스크립트 — 실제 플러그인 경로·이름을 담는다.
+# 개별 파일을 이름으로 나열하지 않는다. 새 스크립트는 여기에 둔다.
 scripts/local/
 
+# 학습 로그
+logs/
 
-
-
-
-
-
+# 세션 계획서
+plan.md
 
 # trash
 trash/

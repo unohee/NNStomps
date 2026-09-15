@@ -17,7 +17,7 @@ profiling = ["rich>=13.0"]
 training = [
     "torch>=2.0",
     "torchaudio>=2.0",
-    "auraloss>=0.4",
+    "onnx>=1.16",
 ]
 
 [project.scripts]
@@ -32,3 +32,4 @@ packages = ["src/nnstomps"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
