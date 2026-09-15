@@ -1,0 +1,133 @@
+{
+  "plugin_name": "passive_eq",
+  "cond_dim": 16,
+  "fir_len": 1024,
+  "val_mag_error": 0.3103175244548104,
+  "controls_domain": "natural",
+  "controls": [
+    {
+      "name": "ch1loenable",
+      "type": "categorical",
+      "options": [
+        "OUT",
+        "BOOST",
+        "CUT"
+      ],
+      "default": "OUT"
+    },
+    {
+      "name": "ch1logain",
+      "type": "continuous",
+      "min": 0,
+      "max": 20,
+      "default": 10.0,
+      "step": 0.5
+    },
+    {
+      "name": "ch1lomidenable",
+      "type": "categorical",
+      "options": [
+        "OUT",
+        "BOOST",
+        "CUT"
+      ],
+      "default": "OUT"
+    },
+    {
+      "name": "ch1lomidgain",
+      "type": "continuous",
+      "min": 0,
+      "max": 20,
+      "default": 10.0,
+      "step": 0.5
+    },
+    {
+      "name": "ch1himidenable",
+      "type": "categorical",
+      "options": [
+        "OUT",
+        "BOOST",
+        "CUT"
+      ],
+      "default": "OUT"
+    },
+    {
+      "name": "ch1himidgain",
+      "type": "continuous",
+      "min": 0,
+      "max": 20,
+      "default": 10.0,
+      "step": 0.5
+    },
+    {
+      "name": "ch1hienable",
+      "type": "categorical",
+      "options": [
+        "OUT",
+        "BOOST",
+        "CUT"
+      ],
+      "default": "OUT"
+    },
+    {
+      "name": "ch1higain",
+      "type": "continuous",
+      "min": 0,
+      "max": 20,
+      "default": 10.0,
+      "step": 0.5
+    }
+  ],
+  "param_spec": {
+    "params": [
+      "ch1loenable",
+      "ch1logain",
+      "ch1lomidenable",
+      "ch1lomidgain",
+      "ch1himidenable",
+      "ch1himidgain",
+      "ch1hienable",
+      "ch1higain"
+    ],
+    "ranges": {
+      "ch1logain": [
+        0,
+        20
+      ],
+      "ch1lomidgain": [
+        0,
+        20
+      ],
+      "ch1himidgain": [
+        0,
+        20
+      ],
+      "ch1higain": [
+        0,
+        20
+      ]
+    },
+    "categorical": {
+      "ch1loenable": [
+        "OUT",
+        "BOOST",
+        "CUT"
+      ],
+      "ch1lomidenable": [
+        "OUT",
+        "BOOST",
+        "CUT"
+      ],
+      "ch1himidenable": [
+        "OUT",
+        "BOOST",
+        "CUT"
+      ],
+      "ch1hienable": [
+        "OUT",
+        "BOOST",
+        "CUT"
+      ]
+    }
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "plugin_name": "channel_eq",
+  "cond_dim": 4,
+  "fir_len": 256,
+  "val_mag_error": 0.2653636112809181,
+  "controls_domain": "natural",
+  "controls": [
+    {
+      "name": "lf_gain",
+      "type": "continuous",
+      "min": -12,
+      "max": 12,
+      "default": 0.0,
+      "step": 0.5
+    },
+    {
+      "name": "lmf_gain",
+      "type": "continuous",
+      "min": -12,
+      "max": 12,
+      "default": 0.0,
+      "step": 0.5
+    },
+    {
+      "name": "hmf_gain",
+      "type": "continuous",
+      "min": -12,
+      "max": 12,
+      "default": 0.0,
+      "step": 0.5
+    },
+    {
+      "name": "hf_gain",
+      "type": "continuous",
+      "min": -12,
+      "max": 12,
+      "default": 0.0,
+      "step": 0.5
+    }
+  ],
+  "param_spec": {
+    "params": [
+      "lf_gain",
+      "lmf_gain",
+      "hmf_gain",
+      "hf_gain"
+    ],
+    "ranges": {
+      "lf_gain": [
+        -12,
+        12
+      ],
+      "lmf_gain": [
+        -12,
+        12
+      ],
+      "hmf_gain": [
+        -12,
+        12
+      ],
+      "hf_gain": [
+        -12,
+        12
+      ]
+    },
+    "categorical": {}
+  }
+}
